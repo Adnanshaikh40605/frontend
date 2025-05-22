@@ -2,9 +2,9 @@
 
 // Get environment variables with fallback to development values
 // IMPORTANT: When deploying to Vercel, set the VITE_API_URL environment variable to your backend URL
-// For example: https://web-production-f03ff.up.railway.app (if your backend is deployed on Railway)
+// For example: https://backend-production-e49d6.up.railway.app (if your backend is deployed on Railway)
 const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const DEFAULT_API_URL = isDevelopment ? 'http://localhost:8000' : 'https://web-production-f03ff.up.railway.app';
+const DEFAULT_API_URL = isDevelopment ? 'http://localhost:8000' : 'https://backend-production-e49d6.up.railway.app';
 const API_URL = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL !== 'undefined') 
   ? import.meta.env.VITE_API_URL 
   : DEFAULT_API_URL;

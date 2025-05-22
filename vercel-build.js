@@ -8,7 +8,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Create an environment file with the API URL
-const envContent = `VITE_API_URL=https://web-production-f03ff.up.railway.app
+const envContent = `VITE_API_BASE_URL=https://backend-production-e49d6.up.railway.app
+VITE_MEDIA_URL=https://backend-production-e49d6.up.railway.app/media/
 `;
 
 // Write the file
