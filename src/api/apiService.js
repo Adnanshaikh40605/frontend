@@ -1,24 +1,28 @@
 // src/api/apiService.js
 
 // Get environment variables with fallback to development values
-// IMPORTANT: When deploying to Vercel, set the VITE_API_URL environment variable to your backend URL
+// IMPORTANT: When deploying to Vercel, set the VITE_API_BASE_URL environment variable to your backend URL
 // For example: https://backend-production-e49d6.up.railway.app (if your backend is deployed on Railway)
-const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const DEFAULT_API_URL = isDevelopment ? 'http://localhost:8000' : 'https://backend-production-e49d6.up.railway.app';
-const API_URL = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL !== 'undefined') 
-  ? import.meta.env.VITE_API_URL 
-  : DEFAULT_API_URL;
-  
-const MEDIA_URL = (import.meta.env.VITE_MEDIA_URL && import.meta.env.VITE_MEDIA_URL !== 'undefined') 
+const isDev = import.meta.env.DEV || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+// API Base URL configuration
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL 
+  ? import.meta.env.VITE_API_BASE_URL 
+  : isDev 
+    ? 'http://localhost:8000' 
+    : 'https://backend-production-e49d6.up.railway.app';
+
+// Media URL configuration
+export const MEDIA_URL = import.meta.env.VITE_MEDIA_URL 
   ? import.meta.env.VITE_MEDIA_URL 
-  : `${API_URL}/media/`;
+  : `${API_BASE_URL}/media/`;
 
 // Import mock data for development fallback
 import { mockAPI, handleApiWithFallback } from './apiMocks';
 
-console.log('Using API URL:', API_URL);
+console.log('Using API URL:', API_BASE_URL);
 console.log('Using MEDIA URL:', MEDIA_URL);
-console.log('Development mode:', isDevelopment ? 'Yes (will fallback to mock data if API unavailable)' : 'No');
+console.log('Development mode:', isDev ? 'Yes (will fallback to mock data if API unavailable)' : 'No');
 
 // Media API helper for working with images
 export const mediaAPI = {
@@ -120,11 +124,11 @@ const handleResponse = async (response) => {
 const postAPI = {
   // Get all posts
   getAll: async (params = {}) => {
-    if (isDevelopment) {
+    if (isDev) {
       return handleApiWithFallback(
         async () => {
           const queryParams = new URLSearchParams(params).toString();
-          const url = queryParams ? `${API_URL}/api/posts/?${queryParams}` : `${API_URL}/api/posts/`;
+          const url = queryParams ? `${API_BASE_URL}/api/posts/?${queryParams}` : `${API_BASE_URL}/api/posts/`;
           
           console.log('Fetching posts from URL:', url);
           
@@ -146,7 +150,7 @@ const postAPI = {
       // Original implementation for production
       try {
         const queryParams = new URLSearchParams(params).toString();
-        const url = queryParams ? `${API_URL}/api/posts/?${queryParams}` : `${API_URL}/api/posts/`;
+        const url = queryParams ? `${API_BASE_URL}/api/posts/?${queryParams}` : `${API_BASE_URL}/api/posts/`;
         
         console.log('Fetching posts from URL:', url);
         
@@ -170,17 +174,17 @@ const postAPI = {
   
   // Get single post by ID (add development mode fallback)
   getById: async (id) => {
-    if (isDevelopment) {
+    if (isDev) {
       return handleApiWithFallback(
         async () => {
-          const response = await fetch(`${API_URL}/api/posts/${id}/`);
+          const response = await fetch(`${API_BASE_URL}/api/posts/${id}/`);
           return handleResponse(response);
         },
         mockAPI.posts.getById(id)
       );
     } else {
       try {
-        const response = await fetch(`${API_URL}/api/posts/${id}/`);
+        const response = await fetch(`${API_BASE_URL}/api/posts/${id}/`);
         return handleResponse(response);
       } catch (error) {
         console.error(`API Error fetching post ${id}:`, error);
@@ -244,7 +248,7 @@ const postAPI = {
           console.log(`FormData contains: ${key}`, value instanceof File ? value.name : value);
         }
         
-        const response = await fetch(`${API_URL}/api/posts/`, {
+        const response = await fetch(`${API_BASE_URL}/api/posts/`, {
           method: 'POST',
           headers: getHeaders(false), // Don't include Content-Type for file uploads
           credentials: 'include',
@@ -258,7 +262,7 @@ const postAPI = {
       console.log('Sending JSON data without files');
       console.log('Post data:', postData);
       
-      const response = await fetch(`${API_URL}/api/posts/`, {
+      const response = await fetch(`${API_BASE_URL}/api/posts/`, {
         method: 'POST',
         headers: getHeaders(),
         credentials: 'include',
@@ -327,7 +331,7 @@ const postAPI = {
           console.log(`FormData contains: ${key}`, value instanceof File ? value.name : value);
         }
         
-        const response = await fetch(`${API_URL}/api/posts/${id}/`, {
+        const response = await fetch(`${API_BASE_URL}/api/posts/${id}/`, {
           method: 'PATCH',
           headers: getHeaders(false), // Don't include Content-Type for file uploads
           credentials: 'include',
@@ -341,7 +345,7 @@ const postAPI = {
       console.log('Sending JSON data without files for update');
       console.log('Post data:', postData);
       
-      const response = await fetch(`${API_URL}/api/posts/${id}/`, {
+      const response = await fetch(`${API_BASE_URL}/api/posts/${id}/`, {
         method: 'PATCH',
         headers: getHeaders(),
         credentials: 'include',
@@ -358,7 +362,7 @@ const postAPI = {
   // Delete post
   delete: async (id) => {
     try {
-      const response = await fetch(`${API_URL}/api/posts/${id}/`, {
+      const response = await fetch(`${API_BASE_URL}/api/posts/${id}/`, {
         method: 'DELETE',
         headers: getHeaders(),
         credentials: 'include'
@@ -384,7 +388,7 @@ const postAPI = {
         formData.append('images', imageFiles);
       }
       
-      const response = await fetch(`${API_URL}/api/posts/${id}/upload_images/`, {
+      const response = await fetch(`${API_BASE_URL}/api/posts/${id}/upload_images/`, {
         method: 'POST',
         headers: getHeaders(false), // Don't include Content-Type for file uploads
         credentials: 'include',
@@ -404,7 +408,7 @@ const imageAPI = {
   // Get all images
   getAll: async () => {
     try {
-      const response = await fetch(`${API_URL}/api/images/`);
+      const response = await fetch(`${API_BASE_URL}/api/images/`);
       return handleResponse(response);
     } catch (error) {
       console.error('API Error fetching images:', error);
@@ -415,7 +419,7 @@ const imageAPI = {
   // Get image by ID
   getById: async (id) => {
     try {
-      const response = await fetch(`${API_URL}/api/images/${id}/`);
+      const response = await fetch(`${API_BASE_URL}/api/images/${id}/`);
       return handleResponse(response);
     } catch (error) {
       console.error(`API Error fetching image ${id}:`, error);
@@ -430,7 +434,7 @@ const imageAPI = {
       formData.append('post', postId);
       formData.append('image', imageFile);
       
-      const response = await fetch(`${API_URL}/api/images/`, {
+      const response = await fetch(`${API_BASE_URL}/api/images/`, {
         method: 'POST',
         headers: getHeaders(false), // Don't include Content-Type for file uploads
         credentials: 'include',
@@ -447,7 +451,7 @@ const imageAPI = {
   // Delete image
   delete: async (id) => {
     try {
-      const response = await fetch(`${API_URL}/api/images/${id}/`, {
+      const response = await fetch(`${API_BASE_URL}/api/images/${id}/`, {
         method: 'DELETE',
         headers: getHeaders(),
         credentials: 'include'
@@ -474,7 +478,7 @@ const imageAPI = {
     
     // If it's a relative path starting with media/, make sure we don't duplicate
     if (cleanPath.startsWith('media/')) {
-      return `${API_URL}/${cleanPath}`;
+      return `${API_BASE_URL}/${cleanPath}`;
     }
     
     // Otherwise, prepend the media URL
@@ -487,7 +491,7 @@ const commentAPI = {
   // Get all comments (with optional post ID filter)
   getAll: async (postId = null) => {
     try {
-      let url = `${API_URL}/api/comments/`;
+      let url = `${API_BASE_URL}/api/comments/`;
       
       // Only add post filter if a valid postId is provided
       if (postId) {
@@ -525,7 +529,7 @@ const commentAPI = {
       
       try {
         // Try using the all endpoint first
-        const url = `${API_URL}/api/comments/all/?post=${safePostId}`;
+        const url = `${API_BASE_URL}/api/comments/all/?post=${safePostId}`;
         console.log('Request URL:', url);
         
         const response = await fetch(url);
@@ -570,7 +574,7 @@ const commentAPI = {
       
       // Try fallback method first (more reliable)
       try {
-        const fallbackUrl = `${API_URL}/api/comments/?post=${safePostId}&approved=true`;
+        const fallbackUrl = `${API_BASE_URL}/api/comments/?post=${safePostId}&approved=true`;
         console.log('Request URL:', fallbackUrl);
         
         const fallbackResponse = await fetch(fallbackUrl);
@@ -609,7 +613,7 @@ const commentAPI = {
       // Use explicit query parameter for approved=false
       // Ensure postId is a string
       const safePostId = String(postId);
-      const url = `${API_URL}/api/comments/?post=${safePostId}&approved=false`;
+      const url = `${API_BASE_URL}/api/comments/?post=${safePostId}&approved=false`;
       console.log('Request URL:', url);
       
       const response = await fetch(url);
@@ -638,7 +642,7 @@ const commentAPI = {
       // Ensure post ID is a string
       commentData.post = String(commentData.post);
       
-      const url = `${API_URL}/api/comments/`;
+      const url = `${API_BASE_URL}/api/comments/`;
       console.log('Creating comment with URL:', url, commentData);
       
       const response = await fetch(url, {
@@ -663,7 +667,7 @@ const commentAPI = {
       }
       
       const safeCommentId = String(commentId);
-      const url = `${API_URL}/api/comments/${safeCommentId}/approve/`;
+      const url = `${API_BASE_URL}/api/comments/${safeCommentId}/approve/`;
       console.log('Approving comment with URL:', url);
       
       const response = await fetch(url, {
@@ -687,7 +691,7 @@ const commentAPI = {
       }
       
       const safeCommentId = String(commentId);
-      const url = `${API_URL}/api/comments/${safeCommentId}/reject/`;
+      const url = `${API_BASE_URL}/api/comments/${safeCommentId}/reject/`;
       console.log('Rejecting comment with URL:', url);
       
       const response = await fetch(url, {
@@ -711,7 +715,7 @@ const commentAPI = {
       }
       
       const safeCommentId = String(commentId);
-      const url = `${API_URL}/api/comments/${safeCommentId}/reply/`;
+      const url = `${API_BASE_URL}/api/comments/${safeCommentId}/reply/`;
       console.log('Replying to comment with URL:', url, replyData);
       
       const response = await fetch(url, {
@@ -736,7 +740,7 @@ const commentAPI = {
       }
       
       const safeCommentId = String(commentId);
-      const url = `${API_URL}/api/comments/${safeCommentId}/reply/`;
+      const url = `${API_BASE_URL}/api/comments/${safeCommentId}/reply/`;
       console.log('Updating comment reply with URL:', url, replyData);
       
       const response = await fetch(url, {
@@ -761,7 +765,7 @@ const commentAPI = {
       }
       
       const safeCommentId = String(commentId);
-      const url = `${API_URL}/api/comments/${safeCommentId}/reply/`;
+      const url = `${API_BASE_URL}/api/comments/${safeCommentId}/reply/`;
       console.log('Deleting comment reply with URL:', url);
       
       const response = await fetch(url, {
@@ -779,7 +783,7 @@ const commentAPI = {
   // Get pending comment count
   getPendingCount: async () => {
     try {
-      const response = await fetch(`${API_URL}/api/comments/pending-count/`);
+      const response = await fetch(`${API_BASE_URL}/api/comments/pending-count/`);
       return await response.json();
     } catch (error) {
       console.error('Error getting pending count:', error);
@@ -795,7 +799,7 @@ const commentAPI = {
         throw new Error('Valid comment IDs array is required');
       }
       
-      const url = `${API_URL}/api/comments/bulk_approve/`;
+      const url = `${API_BASE_URL}/api/comments/bulk_approve/`;
       console.log('Bulk approving comments:', commentIds);
       
       const response = await fetch(url, {
@@ -819,7 +823,7 @@ const commentAPI = {
         throw new Error('Valid comment IDs array is required');
       }
       
-      const url = `${API_URL}/api/comments/bulk_reject/`;
+      const url = `${API_BASE_URL}/api/comments/bulk_reject/`;
       console.log('Bulk rejecting comments:', commentIds);
       
       const response = await fetch(url, {
@@ -842,7 +846,7 @@ const commentAPI = {
         throw new Error('Comment ID is required');
       }
       
-      const url = `${API_URL}/api/comments/trash/`;
+      const url = `${API_BASE_URL}/api/comments/trash/`;
       console.log('Trashing comment:', commentId);
       
       const response = await fetch(url, {
@@ -865,7 +869,7 @@ const commentAPI = {
         throw new Error('Comment ID is required');
       }
       
-      const url = `${API_URL}/api/comments/restore/`;
+      const url = `${API_BASE_URL}/api/comments/restore/`;
       console.log('Restoring comment:', commentId);
       
       const response = await fetch(url, {
@@ -888,7 +892,7 @@ const commentAPI = {
         throw new Error('Comment ID is required');
       }
       
-      const url = `${API_URL}/api/comments/delete/`;
+      const url = `${API_BASE_URL}/api/comments/delete/`;
       console.log('Permanently deleting comment:', commentId);
       
       const response = await fetch(url, {
@@ -913,7 +917,7 @@ const ckEditorAPI = {
       console.log('CKEditor image upload started for file:', file.name);
       
       // If in development mode, check if we should use the mock implementation
-      if (isDevelopment) {
+      if (isDev) {
         try {
           // First try with the real API
           return await uploadImageToServer(file);
@@ -939,7 +943,7 @@ const uploadImageToServer = async (file) => {
   formData.append('upload', file);
   
   // Use the standard CKEditor endpoint
-  const uploadUrl = `${API_URL}/ckeditor5/image_upload/`;
+  const uploadUrl = `${API_BASE_URL}/ckeditor5/image_upload/`;
   console.log('Using CKEditor upload URL:', uploadUrl);
   
   // Prepare the form data
@@ -977,11 +981,11 @@ const uploadImageToServer = async (file) => {
   }
 };
 
-export { 
-  postAPI, 
-  imageAPI, 
+export default {
+  postAPI,
+  imageAPI,
+  mediaAPI,
   commentAPI,
   ckEditorAPI,
-  API_URL,
   MEDIA_URL
 }; 
