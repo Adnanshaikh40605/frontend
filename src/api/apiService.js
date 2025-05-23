@@ -1,21 +1,13 @@
 // src/api/apiService.js
 
 // Get environment variables with fallback to development values
-// IMPORTANT: When deploying to Vercel, set the VITE_API_BASE_URL environment variable to your backend URL
-// For example: https://backend-production-e49d6.up.railway.app (if your backend is deployed on Railway)
-const isDev = import.meta.env.DEV || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const isDev = true; // Set to true by default since we're removing deployment configs
 
-// API Base URL configuration
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL 
-  ? import.meta.env.VITE_API_BASE_URL 
-  : isDev 
-    ? 'http://localhost:8000' 
-    : 'https://backend-production-e49d6.up.railway.app';
+// API Base URL configuration - use only localhost
+export const API_BASE_URL = 'http://localhost:8000';
 
 // Media URL configuration
-export const MEDIA_URL = import.meta.env.VITE_MEDIA_URL 
-  ? import.meta.env.VITE_MEDIA_URL 
-  : `${API_BASE_URL}/media/`;
+export const MEDIA_URL = `${API_BASE_URL}/media/`;
 
 // Import mock data for development fallback
 import { mockAPI, handleApiWithFallback } from './apiMocks';
@@ -121,7 +113,7 @@ const handleResponse = async (response) => {
 };
 
 // Post API functions
-const postAPI = {
+export const postAPI = {
   // Get all posts
   getAll: async (params = {}) => {
     if (isDev) {
