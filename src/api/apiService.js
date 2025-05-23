@@ -1,13 +1,13 @@
 // src/api/apiService.js
 
 // Get environment variables with fallback to development values
-const isDev = true; // Set to true by default since we're removing deployment configs
+const isDev = import.meta.env.DEV || false;
 
-// API Base URL configuration - use only localhost
-export const API_BASE_URL = 'http://localhost:8000';
+// API Base URL configuration - use environment variable with fallback to localhost
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 // Media URL configuration
-export const MEDIA_URL = `${API_BASE_URL}/media/`;
+export const MEDIA_URL = import.meta.env.VITE_MEDIA_URL || `${API_BASE_URL}/media/`;
 
 // Import mock data for development fallback
 import { mockAPI, handleApiWithFallback } from './apiMocks';
@@ -973,11 +973,15 @@ const uploadImageToServer = async (file) => {
   }
 };
 
-export default {
+// Default export with all APIs
+const apiService = {
   postAPI,
   imageAPI,
   mediaAPI,
   commentAPI,
   ckEditorAPI,
   MEDIA_URL
-}; 
+};
+
+// Export the default object
+export default apiService; 
