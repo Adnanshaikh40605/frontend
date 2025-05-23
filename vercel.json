@@ -1,7 +1,7 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "q/api/$1" },
-    { "source": "/media/(.*)", "destination": "q/media/$1" },
+    { "source": "/api/(.*)", "destination": "https://your-railway-app-url.railway.app/api/$1" },
+    { "source": "/media/(.*)", "destination": "https://your-railway-app-url.railway.app/media/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
