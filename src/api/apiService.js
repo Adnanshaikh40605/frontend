@@ -973,15 +973,9 @@ const uploadImageToServer = async (file) => {
   }
 };
 
-// Default export with all APIs
-const apiService = {
-  postAPI,
+// Export all API modules and constants (that aren't already exported) as named exports
+export {
   imageAPI,
-  mediaAPI,
   commentAPI,
-  ckEditorAPI,
-  MEDIA_URL
-};
-
-// Export the default object
-export default apiService; 
+  ckEditorAPI
+}; 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import Comment from '../components/Comment';
-import { commentAPI, API_URL } from '../api/apiService';
+import { commentAPI, API_BASE_URL } from '../api/apiService';
 
 const Container = styled.div`
   width: 100%;
@@ -221,7 +221,7 @@ const CommentsPage = () => {
   useEffect(() => {
     const fetchCounts = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/comments/counts/`);
+        const response = await fetch(`${API_BASE_URL}/api/comments/counts/`);
         if (response.ok) {
           const data = await response.json();
           setCounts({
@@ -250,7 +250,7 @@ const CommentsPage = () => {
         
         console.log('CommentsPage - Fetching comments for tab:', activeTab);
         
-        let url = `${API_URL}/api/comments/?page=${page}&limit=${resultsPerPage}`;
+        let url = `${API_BASE_URL}/api/comments/?page=${page}&limit=${resultsPerPage}`;
         
         // Add filter based on active tab
         if (activeTab === TABS.PENDING) {
@@ -311,7 +311,7 @@ const CommentsPage = () => {
   
   const fetchCounts = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/comments/counts/`);
+      const response = await fetch(`${API_BASE_URL}/api/comments/counts/`);
       if (response.ok) {
         const data = await response.json();
         setCounts({
