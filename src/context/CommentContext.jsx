@@ -1,5 +1,8 @@
 import { createContext, useContext, useState, useCallback } from 'react';
-import { commentAPI } from '../api/apiService';
+import apiService from '../api/apiService';
+
+// Get the commentAPI from the imported apiService
+const { commentAPI } = apiService;
 
 // Create context
 const CommentContext = createContext();
