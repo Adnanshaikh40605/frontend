@@ -1,0 +1,176 @@
+/* Global Lexend Font Styles */
+html, body {
+  font-family: 'Lexend', sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Lexend', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+p, li, a, span, div {
+  font-family: 'Lexend', sans-serif;
+}
+
+/* Table of Contents Styles */
+.table-of-contents {
+  background-color: #f9f9f9;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin: 2rem 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  position: relative;
+  border-left: 4px solid #0066cc;
+  font-family: 'Lexend', sans-serif;
+}
+
+.table-of-contents h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  color: #333;
+  font-weight: 600;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.table-of-contents .toc-list {
+  padding-left: 1.5rem;
+  margin-bottom: 0;
+  counter-reset: item;
+}
+
+.table-of-contents .toc-item {
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.table-of-contents .toc-link {
+  color: #0066cc;
+  text-decoration: none;
+  transition: color 0.2s;
+  display: inline-block;
+}
+
+.table-of-contents .toc-link:hover {
+  color: #004c99;
+  text-decoration: underline;
+}
+
+/* Level indicators */
+.table-of-contents .toc-level-1 {
+  font-weight: 600;
+}
+
+.table-of-contents .toc-level-2 {
+  padding-left: 1rem;
+  font-weight: normal;
+}
+
+.table-of-contents .toc-level-3 {
+  padding-left: 2rem;
+  font-size: 0.95em;
+  color: #555;
+}
+
+.table-of-contents .toc-level-4 {
+  padding-left: 3rem;
+  font-size: 0.9em;
+  color: #666;
+}
+
+.table-of-contents .toc-level-5,
+.table-of-contents .toc-level-6 {
+  padding-left: 4rem;
+  font-size: 0.85em;
+  color: #777;
+}
+
+/* Smooth scrolling for anchor links */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Adjust heading targets to account for fixed header */
+h1[id], h2[id], h3[id], h4[id], h5[id], h6[id] {
+  scroll-margin-top: 80px;
+  scroll-snap-margin-top: 80px; /* For older browsers */
+}
+
+/* Target element highlight effect */
+:target {
+  animation: highlight-section 2s ease;
+}
+
+@keyframes highlight-section {
+  from { background-color: rgba(0, 102, 204, 0.1); }
+  to { background-color: transparent; }
+}
+
+/* Add a hover indicator for headings with IDs */
+h1[id]:hover::after,
+h2[id]:hover::after,
+h3[id]:hover::after,
+h4[id]:hover::after,
+h5[id]:hover::after,
+h6[id]:hover::after {
+  content: ' §';
+  opacity: 0.5;
+  font-size: 0.8em;
+  color: #0066cc;
+  cursor: pointer;
+}
+
+/* Responsive TOC */
+@media (max-width: 768px) {
+  .table-of-contents {
+    padding: 1rem;
+  }
+  
+  .table-of-contents h4 {
+    font-size: 1.1rem;
+  }
+  
+  .table-of-contents .toc-list {
+    padding-left: 1rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .table-of-contents {
+    page-break-inside: avoid;
+    border: 1px solid #ddd;
+    box-shadow: none;
+  }
+}
+
+/* End of article TOC specific styles */
+.end-of-article-toc {
+  background-color: #f0f7ff;
+  border-left-color: #3377cc;
+  border-top: 1px solid #e0e0e0;
+  border-right: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.end-of-article-toc h4 {
+  color: #2c5282;
+  font-size: 1.3rem;
+}
+
+.end-of-article-toc .toc-link {
+  color: #3377cc;
+}
+
+.end-of-article-toc::before {
+  content: "";
+  display: block;
+  position: absolute;
+  top: -20px;
+  left: 20px;
+  right: 20px;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.1), transparent);
+} 
