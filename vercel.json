@@ -5,7 +5,7 @@
   ],
   "framework": "vite",
   "installCommand": "npm install --force", 
-  "buildCommand": "npm run build",
+  "buildCommand": "chmod +x build.sh && ./build.sh",
   "headers": [
     {
       "source": "/(.*)",
