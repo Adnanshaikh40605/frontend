@@ -1,7 +1,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import PropTypes from 'prop-types';
-import { MEDIA_URL } from '../api/apiService';
+import { MEDIA_URL } from '../api';
 
 /**
  * SEO component for managing document head tags

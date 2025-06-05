@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
+import PropTypes from 'prop-types';
 import Button from './Button';
-import { sanitizeAsText } from '../utils/sanitize';
 
 const FormContainer = styled.div`
   margin: 1.5rem 0;
@@ -69,12 +69,12 @@ const ErrorMessage = styled.p`
 `;
 
 const SuccessMessage = styled.div`
-  background-color: #d4edda;
-  color: #155724;
-  padding: 1rem;
+  color: #4caf50;
+  background-color: #e8f5e9;
+  padding: 0.75rem;
   border-radius: 4px;
   margin-bottom: 1rem;
-  transition: all 0.3s ease;
+  font-weight: 500;
 `;
 
 const KeyboardHintContainer = styled.div`
@@ -93,23 +93,19 @@ const KeyboardShortcut = styled.kbd`
   font-size: 0.8rem;
 `;
 
-const CommentForm = ({ 
-  postId, 
-  onCommentSubmitted, 
-  showCommentForm = true, 
-  setShowCommentForm = () => {}, 
-  isSubmitting = false 
-}) => {
+const CommentForm = ({ postId, onCommentSubmitted, showForm = true }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [content, setContent] = useState('');
-  const [localError, setLocalError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
   const textareaRef = useRef(null);
   
   useEffect(() => {
     const handleKeyDown = (event) => {
       // Submit on Ctrl+Enter
-      if (event.ctrlKey && event.key === 'Enter' && showCommentForm) {
+      if (event.ctrlKey && event.key === 'Enter' && showForm) {
         const form = textareaRef.current?.form;
         if (form) form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
       }
@@ -117,64 +113,77 @@ const CommentForm = ({
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showCommentForm]);
+  }, [showForm]);
   
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Basic validation
     if (!content.trim()) {
-      setLocalError('Please enter a comment.');
+      setError('Please enter a comment.');
       return;
     }
     
     if (!name.trim()) {
-      setLocalError('Please enter your name.');
+      setError('Please enter your name.');
       return;
     }
     
     if (!email.trim()) {
-      setLocalError('Please enter your email.');
+      setError('Please enter your email.');
       return;
     }
     
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setLocalError('Please enter a valid email address.');
+      setError('Please enter a valid email address.');
       return;
     }
     
-    setLocalError(null);
+    setError(null);
     
     // Prepare comment data
     const commentData = {
       post: postId,
-      author_name: name,
-      author_email: email,
+      name,
+      email,
       content
     };
     
     // Call the callback if provided
     if (onCommentSubmitted) {
       try {
+        setIsSubmitting(true);
         await onCommentSubmitted(commentData);
         // Reset form
         setName('');
         setEmail('');
         setContent('');
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
       } catch (err) {
         console.error('Error submitting comment:', err);
-        setLocalError('Failed to submit comment. Please try again later.');
+        setError('Failed to submit comment. Please try again later.');
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
   
-  if (!showCommentForm) {
+  if (!showForm) {
     return null;
   }
   
   return (
     <FormContainer>
+      <h3>Leave a Comment</h3>
+      
+      {success && (
+        <SuccessMessage>
+          Your comment has been submitted and is awaiting approval.
+        </SuccessMessage>
+      )}
+      
       <form onSubmit={handleSubmit}>
         <FormGroup>
           <Label htmlFor="name">Name</Label>
@@ -214,7 +223,7 @@ const CommentForm = ({
             required
             disabled={isSubmitting}
           />
-          {localError && <ErrorMessage>{localError}</ErrorMessage>}
+          {error && <ErrorMessage>{error}</ErrorMessage>}
         </FormGroup>
         
         <Button
@@ -231,6 +240,12 @@ const CommentForm = ({
       </KeyboardHintContainer>
     </FormContainer>
   );
+};
+
+CommentForm.propTypes = {
+  postId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  onCommentSubmitted: PropTypes.func.isRequired,
+  showForm: PropTypes.bool
 };
 
 export default CommentForm; 

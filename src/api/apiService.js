@@ -1,24 +1,12 @@
-// src/api/apiService.js
+// apiService.js - Contains API service functions organized by resource type
 
-// Get environment variables with fallback to development values
-// IMPORTANT: When deploying to Vercel, set the VITE_API_URL environment variable to your backend URL
-// For example: https://web-production-f03ff.up.railway.app (if your backend is deployed on Railway)
+import { ENDPOINTS, MEDIA_URL } from './apiEndpoints';
+import { getHeaders, handleResponse, handleApiWithFallback } from './apiUtils';
+import { mockPosts, mockComments, createLocalImageUrl } from './apiMocks';
+import { isAuthenticated, getAuthToken } from '../utils/authUtils';
+
+// Determine if we're in development mode
 const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const DEFAULT_API_URL = isDevelopment ? 'http://localhost:8000' : 'https://web-production-f03ff.up.railway.app';
-const API_URL = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL !== 'undefined') 
-  ? import.meta.env.VITE_API_URL 
-  : DEFAULT_API_URL;
-  
-const MEDIA_URL = (import.meta.env.VITE_MEDIA_URL && import.meta.env.VITE_MEDIA_URL !== 'undefined') 
-  ? import.meta.env.VITE_MEDIA_URL 
-  : `${API_URL}/media/`;
-
-// Import mock data for development fallback
-import { mockAPI, handleApiWithFallback } from './apiMocks';
-
-console.log('Using API URL:', API_URL);
-console.log('Using MEDIA URL:', MEDIA_URL);
-console.log('Development mode:', isDevelopment ? 'Yes (will fallback to mock data if API unavailable)' : 'No');
 
 // Media API helper for working with images
 export const mediaAPI = {
@@ -64,953 +52,8 @@ export const mediaAPI = {
   }
 };
 
-// Helper function to get cookies (for CSRF token)
-function getCookie(name) {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(';').shift();
-}
-
-// Default request headers
-const getHeaders = (includeContentType = true) => {
-  const headers = {};
-  const csrfToken = getCookie('csrftoken');
-  
-  if (csrfToken) {
-    headers['X-CSRFToken'] = csrfToken;
-  }
-  
-  if (includeContentType) {
-    headers['Content-Type'] = 'application/json';
-  }
-  
-  return headers;
-};
-
-// Helper to format API responses with appropriate error handling
-const handleResponse = async (response) => {
-  // For DELETE operations that return 204 No Content
-  if (response.status === 204) {
-    return true;
-  }
-  
-  // Check if response is OK
-  if (!response.ok) {
-    const errorText = await response.text();
-    try {
-      // Try to parse as JSON
-      const errorData = JSON.parse(errorText);
-      throw new Error(JSON.stringify(errorData));
-    } catch (e) {
-      // If not JSON, use text or status
-      throw new Error(errorText || `API request failed with status: ${response.status}`);
-    }
-  }
-  
-  // Check if response is JSON
-  const contentType = response.headers.get('content-type');
-  if (contentType && contentType.includes('application/json')) {
-    return response.json();
-  }
-  
-  return response.text();
-};
-
-// Post API functions
-const postAPI = {
-  // Get all posts
-  getAll: async (params = {}) => {
-    if (isDevelopment) {
-      return handleApiWithFallback(
-        async () => {
-          const queryParams = new URLSearchParams(params).toString();
-          const url = queryParams ? `${API_URL}/api/posts/?${queryParams}` : `${API_URL}/api/posts/`;
-          
-          console.log('Fetching posts from URL:', url);
-          
-          const response = await fetch(url);
-          
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`API Error: ${response.status} - ${response.statusText}`, errorText);
-            
-            // Provide more detailed error information for debugging
-            throw new Error(`Server error (${response.status}): ${errorText || response.statusText}`);
-          }
-          
-          return handleResponse(response);
-        },
-        mockAPI.posts.getAll()
-      );
-    } else {
-      // Original implementation for production
-      try {
-        const queryParams = new URLSearchParams(params).toString();
-        const url = queryParams ? `${API_URL}/api/posts/?${queryParams}` : `${API_URL}/api/posts/`;
-        
-        console.log('Fetching posts from URL:', url);
-        
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`API Error: ${response.status} - ${response.statusText}`, errorText);
-          
-          // Provide more detailed error information for debugging
-          throw new Error(`Server error (${response.status}): ${errorText || response.statusText}`);
-        }
-        
-        return handleResponse(response);
-      } catch (error) {
-        console.error('API Error fetching posts:', error);
-        throw error;
-      }
-    }
-  },
-  
-  // Get single post by ID (add development mode fallback)
-  getById: async (id) => {
-    if (isDevelopment) {
-      return handleApiWithFallback(
-        async () => {
-          const response = await fetch(`${API_URL}/api/posts/${id}/`);
-          return handleResponse(response);
-        },
-        mockAPI.posts.getById(id)
-      );
-    } else {
-      try {
-        const response = await fetch(`${API_URL}/api/posts/${id}/`);
-        return handleResponse(response);
-      } catch (error) {
-        console.error(`API Error fetching post ${id}:`, error);
-        throw error;
-      }
-    }
-  },
-  
-  // Get single post by slug
-  getBySlug: async (slug) => {
-    if (isDevelopment) {
-      return handleApiWithFallback(
-        async () => {
-          // First, try the slug-based endpoint if available
-          try {
-            const response = await fetch(`${API_URL}/api/posts/by-slug/${slug}/`);
-            if (response.ok) {
-              return handleResponse(response);
-            }
-          } catch (e) {
-            console.warn('Slug-based endpoint not available, falling back to search');
-          }
-          
-          // Fall back to searching by slug parameter
-          const response = await fetch(`${API_URL}/api/posts/?slug=${slug}`);
-          const data = await handleResponse(response);
-          
-          // Check if we have results
-          if (data && data.results && data.results.length > 0) {
-            return data.results[0];
-          }
-          
-          throw new Error(`Post with slug "${slug}" not found`);
-        },
-        mockAPI.posts.getBySlug(slug)
-      );
-    } else {
-      try {
-        // First, try the slug-based endpoint if available
-        try {
-          const response = await fetch(`${API_URL}/api/posts/by-slug/${slug}/`);
-          if (response.ok) {
-            return handleResponse(response);
-          }
-        } catch (e) {
-          console.warn('Slug-based endpoint not available, falling back to search');
-        }
-        
-        // Fall back to searching by slug parameter
-        const response = await fetch(`${API_URL}/api/posts/?slug=${slug}`);
-        const data = await handleResponse(response);
-        
-        // Check if we have results
-        if (data && data.results && data.results.length > 0) {
-          return data.results[0];
-        }
-        
-        throw new Error(`Post with slug "${slug}" not found`);
-      } catch (error) {
-        console.error(`API Error fetching post with slug ${slug}:`, error);
-        throw error;
-      }
-    }
-  },
-  
-  // Create new post
-  create: async (postData) => {
-    try {
-      // Check if postData includes files (featured_image or additional_images)
-      if (postData.featured_image instanceof File || 
-          (postData.additional_images && postData.additional_images.some(img => img instanceof File))) {
-        
-        const formData = new FormData();
-        
-        // Add regular fields to formData
-        Object.keys(postData).forEach(key => {
-          // Skip files for now
-          if (key !== 'featured_image' && key !== 'additional_images') {
-            console.log(`Adding field ${key}:`, postData[key]);
-            formData.append(key, postData[key]);
-          }
-        });
-        
-        // Explicitly ensure slug is included
-        if (postData.slug) {
-          console.log('Setting explicit slug:', postData.slug);
-          formData.append('slug', postData.slug);
-        } else if (postData.title) {
-          // Generate slug from title as fallback
-          const slug = postData.title
-            .toLowerCase()
-            .replace(/[^\w\s-]/g, '')
-            .replace(/\s+/g, '-')
-            .replace(/--+/g, '-')
-            .replace(/^-+|-+$/g, '')
-            .trim();
-          console.log('Generated slug from title:', slug);
-          formData.append('slug', slug);
-        }
-        
-        // Handle featured image
-        if (postData.featured_image instanceof File) {
-          formData.append('featured_image', postData.featured_image);
-        }
-        
-        // Handle additional images array
-        if (postData.additional_images && Array.isArray(postData.additional_images)) {
-          postData.additional_images.forEach((image, index) => {
-            if (image instanceof File) {
-              formData.append(`additional_images[${index}]`, image);
-            }
-          });
-        }
-        
-        // Log form data for debugging
-        console.log('Sending form data with files');
-        for (let [key, value] of formData.entries()) {
-          console.log(`FormData contains: ${key}`, value instanceof File ? value.name : value);
-        }
-        
-        const response = await fetch(`${API_URL}/api/posts/`, {
-          method: 'POST',
-          headers: getHeaders(false), // Don't include Content-Type for file uploads
-          credentials: 'include',
-          body: formData
-        });
-        
-        return handleResponse(response);
-      }
-      
-      // Regular JSON submission without files
-      console.log('Sending JSON data without files');
-      console.log('Post data:', postData);
-      
-      const response = await fetch(`${API_URL}/api/posts/`, {
-        method: 'POST',
-        headers: getHeaders(),
-        credentials: 'include',
-        body: JSON.stringify(postData)
-      });
-      
-      return handleResponse(response);
-    } catch (error) {
-      console.error('API Error creating post:', error);
-      throw error;
-    }
-  },
-  
-  // Update existing post
-  update: async (id, postData) => {
-    try {
-      // Check if postData includes files (featured_image or additional_images)
-      if (postData.featured_image instanceof File || 
-          (postData.additional_images && postData.additional_images.some(img => img instanceof File))) {
-        
-        const formData = new FormData();
-        
-        // Add regular fields to formData
-        Object.keys(postData).forEach(key => {
-          // Skip files for now
-          if (key !== 'featured_image' && key !== 'additional_images') {
-            console.log(`Adding field ${key}:`, postData[key]);
-            formData.append(key, postData[key]);
-          }
-        });
-        
-        // Explicitly ensure slug is included
-        if (postData.slug) {
-          console.log('Setting explicit slug:', postData.slug);
-          formData.append('slug', postData.slug);
-        } else if (postData.title) {
-          // Generate slug from title as fallback
-          const slug = postData.title
-            .toLowerCase()
-            .replace(/[^\w\s-]/g, '')
-            .replace(/\s+/g, '-')
-            .replace(/--+/g, '-')
-            .replace(/^-+|-+$/g, '')
-            .trim();
-          console.log('Generated slug from title:', slug);
-          formData.append('slug', slug);
-        }
-        
-        // Handle featured image
-        if (postData.featured_image instanceof File) {
-          formData.append('featured_image', postData.featured_image);
-        }
-        
-        // Handle additional images array
-        if (postData.additional_images && Array.isArray(postData.additional_images)) {
-          postData.additional_images.forEach((image, index) => {
-            if (image instanceof File) {
-              formData.append(`additional_images[${index}]`, image);
-            }
-          });
-        }
-        
-        // Log form data for debugging
-        console.log('Sending form data with files for update');
-        for (let [key, value] of formData.entries()) {
-          console.log(`FormData contains: ${key}`, value instanceof File ? value.name : value);
-        }
-        
-        const response = await fetch(`${API_URL}/api/posts/${id}/`, {
-          method: 'PATCH',
-          headers: getHeaders(false), // Don't include Content-Type for file uploads
-          credentials: 'include',
-          body: formData
-        });
-        
-        return handleResponse(response);
-      }
-      
-      // Regular JSON submission without files
-      console.log('Sending JSON data without files for update');
-      console.log('Post data:', postData);
-      
-      const response = await fetch(`${API_URL}/api/posts/${id}/`, {
-        method: 'PATCH',
-        headers: getHeaders(),
-        credentials: 'include',
-        body: JSON.stringify(postData)
-      });
-      
-      return handleResponse(response);
-    } catch (error) {
-      console.error(`API Error updating post ${id}:`, error);
-      throw error;
-    }
-  },
-  
-  // Delete post
-  delete: async (id) => {
-    try {
-      const response = await fetch(`${API_URL}/api/posts/${id}/`, {
-        method: 'DELETE',
-        headers: getHeaders(),
-        credentials: 'include'
-      });
-      
-      return response.status === 204; // Returns true if successfully deleted
-    } catch (error) {
-      console.error(`API Error deleting post ${id}:`, error);
-      throw error;
-    }
-  },
-  
-  // Validate if a slug is unique and properly formatted
-  validateSlug: async (slug, postId = null) => {
-    try {
-      const response = await fetch(`${API_URL}/api/posts/validate-slug/`, {
-        method: 'POST',
-        headers: getHeaders(),
-        credentials: 'include',
-        body: JSON.stringify({
-          slug,
-          post_id: postId
-        })
-      });
-      
-      if (!response.ok) {
-        // If the server returns an error, do basic client-side validation
-        const slugRegex = /^[a-z0-9-]+$/;
-        const isValidFormat = slugRegex.test(slug);
-        
-        // Return a client-side validation result
-        return {
-          valid: isValidFormat,
-          message: isValidFormat 
-            ? 'Slug format is valid (server validation unavailable)' 
-            : 'Invalid slug format (must contain only lowercase letters, numbers, and hyphens)',
-          isClientSideValidation: true
-        };
-      }
-      
-      return handleResponse(response);
-    } catch (error) {
-      console.error('API Error validating slug:', error);
-      
-      // If the API call fails completely, do basic client-side validation
-      const slugRegex = /^[a-z0-9-]+$/;
-      const isValidFormat = slugRegex.test(slug);
-      
-      // Return a client-side validation result
-      return {
-        valid: isValidFormat,
-        message: isValidFormat 
-          ? 'Slug format is valid (server validation unavailable)' 
-          : 'Invalid slug format (must contain only lowercase letters, numbers, and hyphens)',
-        isClientSideValidation: true
-      };
-    }
-  },
-  
-  // Upload images for a post
-  uploadImages: async (id, imageFiles) => {
-    try {
-      const formData = new FormData();
-      
-      // If imageFiles is an array, append each file
-      if (Array.isArray(imageFiles)) {
-        imageFiles.forEach(file => formData.append('images', file));
-      } else {
-        // If it's a single file
-        formData.append('images', imageFiles);
-      }
-      
-      const response = await fetch(`${API_URL}/api/posts/${id}/upload_images/`, {
-        method: 'POST',
-        headers: getHeaders(false), // Don't include Content-Type for file uploads
-        credentials: 'include',
-        body: formData
-      });
-      
-      return handleResponse(response);
-    } catch (error) {
-      console.error(`API Error uploading images for post ${id}:`, error);
-      throw error;
-    }
-  }
-};
-
-// Image API functions
-const imageAPI = {
-  // Get all images
-  getAll: async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/images/`);
-      return handleResponse(response);
-    } catch (error) {
-      console.error('API Error fetching images:', error);
-      throw error;
-    }
-  },
-  
-  // Get image by ID
-  getById: async (id) => {
-    try {
-      const response = await fetch(`${API_URL}/api/images/${id}/`);
-      return handleResponse(response);
-    } catch (error) {
-      console.error(`API Error fetching image ${id}:`, error);
-      throw error;
-    }
-  },
-  
-  // Upload new image
-  upload: async (postId, imageFile) => {
-    try {
-      const formData = new FormData();
-      formData.append('post', postId);
-      formData.append('image', imageFile);
-      
-      const response = await fetch(`${API_URL}/api/images/`, {
-        method: 'POST',
-        headers: getHeaders(false), // Don't include Content-Type for file uploads
-        credentials: 'include',
-        body: formData
-      });
-      
-      return handleResponse(response);
-    } catch (error) {
-      console.error('API Error uploading image:', error);
-      throw error;
-    }
-  },
-  
-  // Delete image
-  delete: async (id) => {
-    try {
-      const response = await fetch(`${API_URL}/api/images/${id}/`, {
-        method: 'DELETE',
-        headers: getHeaders(),
-        credentials: 'include'
-      });
-      
-      return response.status === 204; // Returns true if successfully deleted
-    } catch (error) {
-      console.error(`API Error deleting image ${id}:`, error);
-      throw error;
-    }
-  },
-  
-  // Helper to get full image URL
-  getImageUrl: (imagePath) => {
-    if (!imagePath) return null;
-    
-    // If it's already a full URL, return it
-    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-      return imagePath;
-    }
-    
-    // Strip leading slash if present in imagePath
-    const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
-    
-    // If it's a relative path starting with media/, make sure we don't duplicate
-    if (cleanPath.startsWith('media/')) {
-      return `${API_URL}/${cleanPath}`;
-    }
-    
-    // Otherwise, prepend the media URL
-    return `${MEDIA_URL}${cleanPath}`;
-  }
-};
-
-// Comment API functions
-const commentAPI = {
-  // Get all comments (with optional post ID filter)
-  getAll: async (postId = null) => {
-    try {
-      let url = `${API_URL}/api/comments/`;
-      
-      // Only add post filter if a valid postId is provided
-      if (postId) {
-        // Ensure postId is a string/number value, not an object
-        const safePostId = String(postId);
-        url += `?post=${safePostId}`;
-      }
-      
-      console.log('Fetching comments with URL:', url);
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error(`Server returned ${response.status} ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error in commentAPI.getAll:', error);
-      return [];
-    }
-  },
-  
-  // Get all comments for a specific post (both approved and pending)
-  getAllForPost: async (postId) => {
-    try {
-      if (!postId) {
-        console.error('No post ID provided to getAllForPost');
-        return { approved: [], pending: [], total: 0 };
-      }
-      
-      // Ensure postId is a string
-      const safePostId = String(postId);
-      console.log(`Fetching all comments for post ${safePostId}`);
-      
-      try {
-        // Try using the all endpoint first
-        const url = `${API_URL}/api/comments/all/?post=${safePostId}`;
-        console.log('Request URL:', url);
-        
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error(`Failed with status ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('All comments response:', data);
-        
-        return data; // This should already have approved and pending arrays
-      } catch (dedicatedEndpointError) {
-        console.warn('Dedicated endpoint failed, falling back to query params:', dedicatedEndpointError);
-        
-        // If the dedicated endpoint fails, fetch approved and pending separately
-        const approved = await commentAPI.getApproved(safePostId);
-        const pending = await commentAPI.getPending(safePostId);
-        
-        return {
-          approved: approved.results || [],
-          pending: pending.results || [],
-          total: (approved.results?.length || 0) + (pending.results?.length || 0)
-        };
-      }
-    } catch (error) {
-      console.error('Error fetching all comments for post:', error);
-      return { approved: [], pending: [], total: 0 };
-    }
-  },
-  
-  // Get approved comments for a post
-  getApproved: async (postId) => {
-    try {
-      if (!postId) {
-        console.error('No post ID provided to getApproved');
-        return { results: [], count: 0 };
-      }
-      
-      // Ensure postId is a string to avoid [object Object] in URL
-      const safePostId = String(postId);
-      console.log(`Fetching approved comments for post ${safePostId} - ${new Date().toISOString()}`);
-      
-      // Try fallback method first (more reliable)
-      try {
-        const fallbackUrl = `${API_URL}/api/comments/?post=${safePostId}&approved=true`;
-        console.log('Request URL:', fallbackUrl);
-        
-        const fallbackResponse = await fetch(fallbackUrl);
-        if (!fallbackResponse.ok) {
-          throw new Error(`Failed with status ${fallbackResponse.status}`);
-        }
-        
-        const fallbackData = await fallbackResponse.json();
-        console.log('Approved comments response (query params):', fallbackData);
-        
-        return {
-          results: Array.isArray(fallbackData) ? fallbackData : [],
-          count: Array.isArray(fallbackData) ? fallbackData.length : 0
-        };
-      } catch (fallbackError) {
-        console.warn('Standard endpoint failed:', fallbackError);
-        // Return empty results as ultimate fallback
-        return { results: [], count: 0 };
-      }
-    } catch (error) {
-      console.error('Error fetching approved comments:', error);
-      // Return empty results to avoid UI breaking
-      return { results: [], count: 0 };
-    }
-  },
-  
-  // Get pending comments for a post
-  getPending: async (postId) => {
-    try {
-      if (!postId) {
-        console.error('No post ID provided to getPending');
-        return { results: [], count: 0 };
-      }
-      
-      console.log(`Fetching pending comments for post ${postId} - ${new Date().toISOString()}`);
-      // Use explicit query parameter for approved=false
-      // Ensure postId is a string
-      const safePostId = String(postId);
-      const url = `${API_URL}/api/comments/?post=${safePostId}&approved=false`;
-      console.log('Request URL:', url);
-      
-      const response = await fetch(url);
-      const data = await response.json();
-      console.log('Pending comments response:', data);
-      
-      // Format the response to match what the component expects
-      return {
-        results: Array.isArray(data) ? data : [],
-        count: Array.isArray(data) ? data.length : 0
-      };
-    } catch (error) {
-      console.error('Error fetching pending comments:', error);
-      return { results: [], count: 0 };
-    }
-  },
-  
-  // Create a new comment
-  create: async (commentData) => {
-    try {
-      if (!commentData || !commentData.post) {
-        console.error('Invalid comment data or missing post ID');
-        throw new Error('Valid comment data with post ID is required');
-      }
-      
-      // Ensure post ID is a string
-      commentData.post = String(commentData.post);
-      
-      const url = `${API_URL}/api/comments/`;
-      console.log('Creating comment with URL:', url, commentData);
-      
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify(commentData)
-      });
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error creating comment:', error);
-      throw error;
-    }
-  },
-  
-  // Approve a comment
-  approve: async (commentId) => {
-    try {
-      if (!commentId) {
-        console.error('No comment ID provided to approve');
-        throw new Error('Comment ID is required');
-      }
-      
-      const safeCommentId = String(commentId);
-      const url = `${API_URL}/api/comments/${safeCommentId}/approve/`;
-      console.log('Approving comment with URL:', url);
-      
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: getHeaders()
-      });
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error approving comment:', error);
-      throw error;
-    }
-  },
-  
-  // Reject (delete) a comment
-  reject: async (commentId) => {
-    try {
-      if (!commentId) {
-        console.error('No comment ID provided to reject');
-        throw new Error('Comment ID is required');
-      }
-      
-      const safeCommentId = String(commentId);
-      const url = `${API_URL}/api/comments/${safeCommentId}/reject/`;
-      console.log('Rejecting comment with URL:', url);
-      
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: getHeaders()
-      });
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error rejecting comment:', error);
-      throw error;
-    }
-  },
-  
-  // Reply to a comment as admin
-  replyToComment: async (commentId, replyData) => {
-    try {
-      if (!commentId) {
-        console.error('No comment ID provided for reply');
-        throw new Error('Comment ID is required');
-      }
-      
-      const safeCommentId = String(commentId);
-      const url = `${API_URL}/api/comments/${safeCommentId}/reply/`;
-      console.log('Replying to comment with URL:', url, replyData);
-      
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify(replyData)
-      });
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error replying to comment:', error);
-      throw error;
-    }
-  },
-  
-  // Update an existing admin reply
-  updateReply: async (commentId, replyData) => {
-    try {
-      if (!commentId) {
-        console.error('No comment ID provided for update reply');
-        throw new Error('Comment ID is required');
-      }
-      
-      const safeCommentId = String(commentId);
-      const url = `${API_URL}/api/comments/${safeCommentId}/reply/`;
-      console.log('Updating comment reply with URL:', url, replyData);
-      
-      const response = await fetch(url, {
-        method: 'PUT',
-        headers: getHeaders(),
-        body: JSON.stringify(replyData)
-      });
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error updating comment reply:', error);
-      throw error;
-    }
-  },
-  
-  // Delete an admin reply
-  deleteReply: async (commentId) => {
-    try {
-      if (!commentId) {
-        console.error('No comment ID provided for delete reply');
-        throw new Error('Comment ID is required');
-      }
-      
-      const safeCommentId = String(commentId);
-      const url = `${API_URL}/api/comments/${safeCommentId}/reply/`;
-      console.log('Deleting comment reply with URL:', url);
-      
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers: getHeaders()
-      });
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error deleting comment reply:', error);
-      throw error;
-    }
-  },
-  
-  // Get pending comment count
-  getPendingCount: async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/comments/pending-count/`);
-      return await response.json();
-    } catch (error) {
-      console.error('Error getting pending count:', error);
-      return { count: 0 };
-    }
-  },
-  
-  // Bulk approve comments
-  bulkApprove: async (commentIds) => {
-    try {
-      if (!Array.isArray(commentIds) || commentIds.length === 0) {
-        console.error('Invalid or empty comment IDs for bulk approve');
-        throw new Error('Valid comment IDs array is required');
-      }
-      
-      const url = `${API_URL}/api/comments/bulk_approve/`;
-      console.log('Bulk approving comments:', commentIds);
-      
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({ comment_ids: commentIds })
-      });
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error bulk approving comments:', error);
-      throw error;
-    }
-  },
-  
-  // Bulk reject comments
-  bulkReject: async (commentIds) => {
-    try {
-      if (!Array.isArray(commentIds) || commentIds.length === 0) {
-        console.error('Invalid or empty comment IDs for bulk reject');
-        throw new Error('Valid comment IDs array is required');
-      }
-      
-      const url = `${API_URL}/api/comments/bulk_reject/`;
-      console.log('Bulk rejecting comments:', commentIds);
-      
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({ comment_ids: commentIds })
-      });
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error bulk rejecting comments:', error);
-      throw error;
-    }
-  },
-
-  // Trash a comment
-  trashComment: async (commentId) => {
-    try {
-      if (!commentId) {
-        throw new Error('Comment ID is required');
-      }
-      
-      const url = `${API_URL}/api/comments/trash/`;
-      console.log('Trashing comment:', commentId);
-      
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({ comment_id: commentId })
-      });
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error trashing comment:', error);
-      throw error;
-    }
-  },
-
-  // Restore a comment from trash
-  restoreComment: async (commentId) => {
-    try {
-      if (!commentId) {
-        throw new Error('Comment ID is required');
-      }
-      
-      const url = `${API_URL}/api/comments/restore/`;
-      console.log('Restoring comment:', commentId);
-      
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({ comment_id: commentId })
-      });
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error restoring comment:', error);
-      throw error;
-    }
-  },
-
-  // Permanently delete a comment
-  deleteComment: async (commentId) => {
-    try {
-      if (!commentId) {
-        throw new Error('Comment ID is required');
-      }
-      
-      const url = `${API_URL}/api/comments/delete/`;
-      console.log('Permanently deleting comment:', commentId);
-      
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({ comment_id: commentId })
-      });
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error deleting comment:', error);
-      throw error;
-    }
-  },
-};
-
 // CKEditor API helper
-const ckEditorAPI = {
+export const ckEditorAPI = {
   // Upload an image for CKEditor
   uploadImage: async (file) => {
     try {
@@ -1020,15 +63,70 @@ const ckEditorAPI = {
       if (isDevelopment) {
         try {
           // First try with the real API
-          return await uploadImageToServer(file);
+          const formData = new FormData();
+          formData.append('upload', file);
+          
+          const response = await fetch(ENDPOINTS.CKEDITOR_UPLOAD, {
+            method: 'POST',
+            headers: getHeaders(false), // Don't include Content-Type for file uploads
+            credentials: 'include',
+            body: formData
+          });
+          
+          // Check response status first
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Upload failed with status ${response.status}: ${errorText || response.statusText}`);
+          }
+          
+          const result = await handleResponse(response);
+          
+          // Standardize response structure across environments
+          if (result && (result.url || result.default)) {
+            return {
+              url: result.url || result.default
+            };
+          } else if (result && result.error) {
+            throw new Error(result.error.message || 'Unknown upload error');
+          } else {
+            throw new Error('Invalid server response format');
+          }
         } catch (error) {
           console.warn('Error using real API for image upload, falling back to mock:', error.message);
           // If the real API fails, use the mock implementation
-          return await mockAPI.ckEditor.uploadImage(file);
+          const dataUrl = await createLocalImageUrl(file);
+          return { url: dataUrl };
         }
       } else {
         // In production, always use real API
-        return await uploadImageToServer(file);
+        const formData = new FormData();
+        formData.append('upload', file);
+        
+        const response = await fetch(ENDPOINTS.CKEDITOR_UPLOAD, {
+          method: 'POST',
+          headers: getHeaders(false), // Don't include Content-Type for file uploads
+          credentials: 'include',
+          body: formData
+        });
+        
+        // Check response status first
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Upload failed with status ${response.status}: ${errorText || response.statusText}`);
+        }
+        
+        const result = await handleResponse(response);
+        
+        // Standardize response structure across environments
+        if (result && (result.url || result.default)) {
+          return {
+            url: result.url || result.default
+          };
+        } else if (result && result.error) {
+          throw new Error(result.error.message || 'Unknown upload error');
+        } else {
+          throw new Error('Invalid server response format');
+        }
       }
     } catch (error) {
       console.error('API Error uploading CKEditor image:', error);
@@ -1037,55 +135,630 @@ const ckEditorAPI = {
   }
 };
 
-// Helper function to upload images to the real server
-const uploadImageToServer = async (file) => {
-  const formData = new FormData();
-  formData.append('upload', file);
+// Post API functions
+export const postAPI = {
+  // Get all posts
+  getAll: async (params = {}) => {
+    try {
+      const queryParams = new URLSearchParams(params).toString();
+      const url = `${ENDPOINTS.POSTS}${queryParams ? `?${queryParams}` : ''}`;
+      
+      if (isDevelopment) {
+        return handleApiWithFallback(
+          async () => {
+            const response = await fetch(url);
+            return handleResponse(response);
+          },
+          { results: mockPosts, count: mockPosts.length }
+        );
+      } else {
+        const response = await fetch(url);
+        return handleResponse(response);
+      }
+    } catch (error) {
+      console.error('API Error fetching posts:', error);
+      throw error;
+    }
+  },
   
-  // Use the standard CKEditor endpoint
-  const uploadUrl = `${API_URL}/ckeditor5/image_upload/`;
-  console.log('Using CKEditor upload URL:', uploadUrl);
+  // Get single post by slug
+  getBySlug: async (slug) => {
+    try {
+      // Ensure we're using the correct URL format for slug-based lookups
+      const url = `${ENDPOINTS.POSTS}${slug}/`;
+      
+      console.log('Fetching post with URL:', url);
+      
+      if (isDevelopment) {
+        return handleApiWithFallback(
+          async () => {
+            const response = await fetch(url);
+            if (!response.ok) {
+              console.error(`API Error: ${response.status} ${response.statusText}`);
+              throw new Error(`Failed to fetch post: ${response.statusText}`);
+            }
+            return handleResponse(response);
+          },
+          mockPosts.find(post => post.slug === slug) || null
+        );
+      } else {
+        const response = await fetch(url);
+        if (!response.ok) {
+          console.error(`API Error: ${response.status} ${response.statusText}`);
+          throw new Error(`Failed to fetch post: ${response.statusText}`);
+        }
+        return handleResponse(response);
+      }
+    } catch (error) {
+      console.error(`API Error fetching post ${slug}:`, error);
+      throw error;
+    }
+  },
   
-  // Prepare the form data
-  const freshFormData = new FormData();
-  freshFormData.append('upload', file);
+  // For backward compatibility
+  getById: async (id) => {
+    console.warn('postAPI.getById is deprecated, use getBySlug instead');
+    try {
+      const url = `${ENDPOINTS.POSTS}${id}/`;
+      
+      if (isDevelopment) {
+        return handleApiWithFallback(
+          async () => {
+            const response = await fetch(url);
+            return handleResponse(response);
+          },
+          mockPosts.find(post => post.id === parseInt(id)) || null
+        );
+      } else {
+        const response = await fetch(url);
+        return handleResponse(response);
+      }
+    } catch (error) {
+      console.error(`API Error fetching post ${id}:`, error);
+      throw error;
+    }
+  },
   
-  const response = await fetch(uploadUrl, {
-    method: 'POST',
-    headers: getHeaders(false), // Don't include Content-Type for file uploads
-    credentials: 'include',
-    body: freshFormData
-  });
+  // Create a new post
+  create: async (postData) => {
+    try {
+      // Use FormData for handling file uploads
+      const formData = new FormData();
+      
+      // Add all fields to FormData
+      Object.entries(postData).forEach(([key, value]) => {
+        // Handle array of files (for additional_images)
+        if (key === 'additional_images' && Array.isArray(value)) {
+          value.forEach((file, index) => {
+            formData.append(`additional_images[${index}]`, file);
+          });
+        } 
+        // Handle featured image
+        else if (key === 'featured_image' && value instanceof File) {
+          formData.append('featured_image', value);
+        }
+        // For boolean values
+        else if (typeof value === 'boolean') {
+          formData.append(key, value);
+        }
+        // For other non-null values
+        else if (value !== null && value !== undefined) {
+          formData.append(key, value);
+        }
+      });
+      
+      // Get headers with authentication token
+      const headers = await getHeaders(false); // Don't include Content-Type for file uploads
+      
+      // Explicitly add authentication token
+      const token = getAuthToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(ENDPOINTS.POSTS, {
+        method: 'POST',
+        headers: headers,
+        credentials: 'include',
+        body: formData
+      });
+      return handleResponse(response);
+    } catch (error) {
+      console.error('API Error creating post:', error);
+      throw error;
+    }
+  },
   
-  // Check response status first
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`CKEditor image upload failed with status ${response.status}:`, errorText);
-    throw new Error(`Upload failed with status ${response.status}: ${errorText || response.statusText}`);
-  }
+  // Update post
+  update: async (slug, postData) => {
+    try {
+      // Use FormData for handling file uploads
+      const formData = new FormData();
+      
+      // Add all fields to FormData
+      Object.entries(postData).forEach(([key, value]) => {
+        // Handle array of files (for additional_images)
+        if (key === 'additional_images' && Array.isArray(value)) {
+          value.forEach((file, index) => {
+            if (file instanceof File) {
+              formData.append(`additional_images[${index}]`, file);
+            }
+          });
+        } 
+        // Handle featured image
+        else if (key === 'featured_image' && value instanceof File) {
+          formData.append('featured_image', value);
+        }
+        // For boolean values
+        else if (typeof value === 'boolean') {
+          formData.append(key, value);
+        }
+        // For other non-null values
+        else if (value !== null && value !== undefined) {
+          formData.append(key, value);
+        }
+      });
+      
+      // Get headers with authentication token
+      const headers = await getHeaders(false); // Don't include Content-Type for file uploads
+      
+      // Explicitly add authentication token
+      const token = getAuthToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      // Try different update methods in sequence
+      const updateMethods = [
+        // Method 1: PUT to specific endpoint
+        async () => {
+          console.log('Trying PUT to specific endpoint...');
+          const response = await fetch(`${ENDPOINTS.POSTS}${slug}/`, {
+            method: 'PUT',
+            headers: headers,
+            credentials: 'include',
+            body: formData
+          });
+          return handleResponse(response);
+        },
+        
+        // Method 2: PATCH to specific endpoint
+        async () => {
+          console.log('Trying PATCH to specific endpoint...');
+          const response = await fetch(`${ENDPOINTS.POSTS}${slug}/`, {
+            method: 'PATCH',
+            headers: headers,
+            credentials: 'include',
+            body: formData
+          });
+          return handleResponse(response);
+        }
+      ];
+      
+      // Try each method in sequence until one works
+      let lastError = null;
+      for (const method of updateMethods) {
+        try {
+          return await method();
+        } catch (error) {
+          console.log('Update method failed:', error.message);
+          lastError = error;
+          // Continue to the next method
+        }
+      }
+      
+      // If we get here, all methods failed
+      throw lastError || new Error('All update methods failed');
+    } catch (error) {
+      console.error(`API Error updating post ${slug}:`, error);
+      throw error;
+    }
+  },
   
-  const result = await handleResponse(response);
-  console.log('CKEditor image upload response:', result);
+  // Delete post
+  delete: async (id) => {
+    try {
+      // Make sure we have proper authentication headers
+      const headers = getHeaders();
+      
+      // Check authentication status
+      if (!isAuthenticated()) {
+        throw new Error('Authentication required. Please log in and try again.');
+      }
+      
+      // Explicitly add authentication token
+      const token = getAuthToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      // Check if we're in development mode for better debugging
+      if (isDevelopment) {
+        console.log(`Attempting to delete post with ID: ${id}`);
+        console.log(`Using endpoint: ${ENDPOINTS.POSTS}${id}/delete/`);
+        console.log('Headers:', headers);
+        console.log('Authentication token available:', !!token);
+      }
+      
+      // Use the POST to /delete/ endpoint directly instead of trying DELETE first
+      // This avoids CORS issues with the DELETE method
+      try {
+        const response = await fetch(`${ENDPOINTS.POSTS}${id}/delete/`, {
+          method: 'POST',
+          headers: headers,
+          credentials: 'include'
+        });
+        
+        // Check if the request was successful
+        if (response.ok) {
+          const result = await handleResponse(response);
+          console.log('Delete response:', result);
+          return true;
+        }
+        
+        // If we get a 401, we need to handle authentication
+        if (response.status === 401) {
+          console.warn('Authentication required for delete operation');
+          throw new Error('Authentication required. Please log in and try again.');
+        }
+        
+        // If there was an error, throw it to be caught by the outer catch
+        throw new Error(`Failed to delete post: ${response.status} ${response.statusText}`);
+      } catch (innerError) {
+        console.error(`Error in delete operation: ${innerError.message}`);
+        throw innerError;
+      }
+    } catch (error) {
+      console.error(`API Error deleting post ${id}:`, error);
+      throw error;
+    }
+  },
   
-  // Standardize response structure across environments
-  // CKEditor 5 expects a response with either url or error
-  if (result && (result.url || result.default)) {
-    return {
-      url: result.url || result.default
-    };
-  } else if (result && result.error) {
-    throw new Error(result.error.message || 'Unknown upload error');
-  } else {
-    console.error('Unexpected upload response format:', result);
-    throw new Error('Invalid server response format');
+  // Upload images for a post
+  uploadImage: async (id, imageFile) => {
+    try {
+      const formData = new FormData();
+      formData.append('image', imageFile);
+      
+      const response = await fetch(`${ENDPOINTS.POSTS}${id}/upload_images/`, {
+        method: 'POST',
+        headers: getHeaders(false), // Don't include Content-Type for file uploads
+        credentials: 'include',
+        body: formData
+      });
+      return handleResponse(response);
+    } catch (error) {
+      console.error(`API Error uploading image for post ${id}:`, error);
+      throw error;
+    }
   }
 };
 
-export { 
-  postAPI, 
-  imageAPI, 
-  commentAPI,
-  ckEditorAPI,
-  API_URL,
-  MEDIA_URL
-}; 
+// Comment API functions
+export const commentAPI = {
+  // Get all comments (with optional post ID filter)
+  getAll: async (postId = null) => {
+    try {
+      let url = ENDPOINTS.COMMENTS;
+      if (postId) {
+        url += `?post=${postId}`;
+      }
+      const response = await fetch(url);
+      return handleResponse(response);
+    } catch (error) {
+      console.error('API Error fetching comments:', error);
+      throw error;
+    }
+  },
+  
+  // Get approved comments for a post
+  getApproved: async (postId) => {
+    try {
+      if (!postId) {
+        throw new Error('Post ID is required to get approved comments');
+      }
+      
+      const url = `${ENDPOINTS.COMMENTS}?post=${postId}&approved=true&is_trash=false`;
+      
+      console.log(`Fetching approved comments for post ${postId} from: ${url}`);
+      
+      const response = await fetch(url);
+      return handleResponse(response);
+    } catch (error) {
+      console.error(`API Error fetching approved comments for post ${postId}:`, error);
+      // Return empty results on error
+      return { results: [], count: 0, next: null, previous: null };
+    }
+  },
+  
+  // Get all comments for a post (both approved and pending)
+  getAllForPost: async (postId) => {
+    try {
+      if (!postId) {
+        throw new Error('Post ID is required to get comments');
+      }
+      
+      const url = `${ENDPOINTS.COMMENTS}all/?post=${postId}`;
+      
+      if (isDevelopment) {
+        return handleApiWithFallback(
+          async () => {
+            const response = await fetch(url);
+            return handleResponse(response);
+          },
+          mockComments
+        );
+      } else {
+        const response = await fetch(url);
+        return handleResponse(response);
+      }
+    } catch (error) {
+      console.error(`API Error fetching all comments for post ${postId}:`, error);
+      // Return empty results on error
+      return { approved: [], pending: [], total: 0 };
+    }
+  },
+  
+  // Create new comment
+  create: async (commentData) => {
+    try {
+      // Use FormData for handling file uploads
+      const formData = new FormData();
+      
+      // Add all fields to FormData
+      Object.entries(commentData).forEach(([key, value]) => {
+        // For boolean values
+        if (typeof value === 'boolean') {
+          formData.append(key, value);
+        }
+        // For other non-null values
+        else if (value !== null && value !== undefined) {
+          formData.append(key, value);
+        }
+      });
+      
+      const headers = await getHeaders(false); // Get headers with token refresh if needed
+      
+      const response = await fetch(ENDPOINTS.COMMENTS, {
+        method: 'POST',
+        headers: headers,
+        credentials: 'include',
+        body: formData
+      });
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Error creating comment:', error);
+      throw error;
+    }
+  },
+  
+  // Approve a comment
+  approve: async (id) => {
+    try {
+      // Get headers with authentication token
+      const headers = await getHeaders();
+      
+      // Explicitly add authentication token
+      const token = getAuthToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`${ENDPOINTS.COMMENTS}${id}/approve/`, {
+        method: 'POST',
+        headers: headers,
+        credentials: 'include'
+      });
+      return handleResponse(response);
+    } catch (error) {
+      console.error(`API Error approving comment ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  // Reject a comment
+  reject: async (id) => {
+    try {
+      // Get headers with authentication token
+      const headers = await getHeaders();
+      
+      // Explicitly add authentication token
+      const token = getAuthToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`${ENDPOINTS.COMMENTS}${id}/reject/`, {
+        method: 'POST',
+        headers: headers,
+        credentials: 'include'
+      });
+      return handleResponse(response);
+    } catch (error) {
+      console.error(`API Error rejecting comment ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  // Bulk approve comments
+  bulkApprove: async (commentIds) => {
+    try {
+      const formData = new FormData();
+      formData.append('ids', JSON.stringify(commentIds));
+      
+      // Get headers with authentication token
+      const headers = await getHeaders(false); // Don't include Content-Type for file uploads
+      
+      // Explicitly add authentication token
+      const token = getAuthToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(ENDPOINTS.BULK_APPROVE, {
+        method: 'POST',
+        headers: headers,
+        credentials: 'include',
+        body: formData
+      });
+      return handleResponse(response);
+    } catch (error) {
+      console.error('API Error bulk approving comments:', error);
+      throw error;
+    }
+  },
+  
+  // Bulk reject comments
+  bulkReject: async (commentIds) => {
+    try {
+      const formData = new FormData();
+      formData.append('ids', JSON.stringify(commentIds));
+      
+      // Get headers with authentication token
+      const headers = await getHeaders(false); // Don't include Content-Type for file uploads
+      
+      // Explicitly add authentication token
+      const token = getAuthToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(ENDPOINTS.BULK_REJECT, {
+        method: 'POST',
+        headers: headers,
+        credentials: 'include',
+        body: formData
+      });
+      return handleResponse(response);
+    } catch (error) {
+      console.error('API Error bulk rejecting comments:', error);
+      throw error;
+    }
+  },
+  
+  // Get filtered comments with pagination and status filtering
+  getFilteredComments: async (params = {}) => {
+    try {
+      const queryParams = new URLSearchParams(params).toString();
+      const url = `${ENDPOINTS.COMMENTS}${queryParams ? `?${queryParams}` : ''}`;
+      
+      console.log('Fetching filtered comments with URL:', url);
+      
+      const response = await fetch(url);
+      return handleResponse(response);
+    } catch (error) {
+      console.error('API Error fetching filtered comments:', error);
+      throw error;
+    }
+  },
+  
+  // Get counts of comments by status
+  getCounts: async () => {
+    try {
+      console.log('Fetching comment counts from:', ENDPOINTS.COMMENT_COUNTS);
+      const response = await fetch(ENDPOINTS.COMMENT_COUNTS);
+      return handleResponse(response);
+    } catch (error) {
+      console.error('API Error fetching comment counts:', error);
+      // Return empty results on error
+      return { all: 0, pending: 0, approved: 0, trash: 0 };
+    }
+  },
+  
+  // Trash a comment
+  trashComment: async (id) => {
+    try {
+      // Get headers with authentication token
+      const headers = await getHeaders();
+      
+      // Explicitly add authentication token
+      const token = getAuthToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`${ENDPOINTS.COMMENTS}${id}/trash/`, {
+        method: 'POST',
+        headers: headers,
+        credentials: 'include'
+      });
+      return handleResponse(response);
+    } catch (error) {
+      console.error(`API Error trashing comment ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  // Restore a comment from trash
+  restoreComment: async (id) => {
+    try {
+      // Get headers with authentication token
+      const headers = await getHeaders();
+      
+      // Explicitly add authentication token
+      const token = getAuthToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`${ENDPOINTS.COMMENTS}${id}/restore/`, {
+        method: 'POST',
+        headers: headers,
+        credentials: 'include'
+      });
+      return handleResponse(response);
+    } catch (error) {
+      console.error(`API Error restoring comment ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  // Delete a comment permanently
+  deleteComment: async (id) => {
+    try {
+      // Get headers with authentication token
+      const headers = await getHeaders();
+      
+      // Explicitly add authentication token
+      const token = getAuthToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`${ENDPOINTS.COMMENTS}${id}/delete/`, {
+        method: 'POST',
+        headers: headers,
+        credentials: 'include'
+      });
+      return handleResponse(response);
+    } catch (error) {
+      console.error(`API Error deleting comment ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  // Reply to a comment
+  replyToComment: async (id, replyData) => {
+    try {
+      // Get headers with authentication token
+      const headers = await getHeaders();
+      
+      // Explicitly add authentication token
+      const token = getAuthToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`${ENDPOINTS.COMMENTS}${id}/reply/`, {
+        method: 'POST',
+        headers: headers,
+        credentials: 'include',
+        body: JSON.stringify(replyData)
+      });
+      return handleResponse(response);
+    } catch (error) {
+      console.error(`API Error replying to comment ${id}:`, error);
+      throw error;
+    }
+  },
+};

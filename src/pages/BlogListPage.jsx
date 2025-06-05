@@ -58,12 +58,50 @@ const SearchInput = styled.input`
   }
 `;
 
+const SearchTypeSelector = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-top: 0.5rem;
+  gap: 1rem;
+`;
+
+const SearchTypeButton = styled.button`
+  background: none;
+  border: none;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  color: ${props => props.$active ? '#0066cc' : '#666'};
+  font-weight: ${props => props.$active ? 'bold' : 'normal'};
+  border-bottom: 2px solid ${props => props.$active ? '#0066cc' : 'transparent'};
+  
+  &:hover {
+    color: #0066cc;
+  }
+`;
+
 const SearchIcon = styled.span`
   position: absolute;
   right: 1rem;
   top: 50%;
   transform: translateY(-50%);
   color: #666;
+`;
+
+const SearchButton = styled.button`
+  position: absolute;
+  right: 0;
+  top: 0;
+  padding: 13px 1rem;
+  background-color: #0066cc;
+  color: white;
+  border: none;
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+  cursor: pointer;
+  
+  &:hover {
+    background-color: #0055aa;
+  }
 `;
 
 const BlogGrid = styled.div`
@@ -255,21 +293,23 @@ const Spinner = styled.div`
   }
 `;
 
-// Cache for blog posts list
-let postsCache = null;
+// Initialize cache for blog posts list
+const postsCache = {
+  data: null
+};
 
 const BlogListPage = () => {
   const location = useLocation();
-  const [posts, setPosts] = useState(() => postsCache || []);
-  const [loading, setLoading] = useState(!postsCache);
-  const [visibleLoading, setVisibleLoading] = useState(!postsCache);
+  const [posts, setPosts] = useState(() => postsCache.data || []);
+  const [loading, setLoading] = useState(!postsCache.data);
+  const [visibleLoading, setVisibleLoading] = useState(!postsCache.data);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const initialLoad = useRef(!postsCache);
+  const initialLoad = useRef(!postsCache.data);
   const isMounted = useRef(true);
   const mainContentRef = useRef(null);
+  const [searchType, setSearchType] = useState('title'); // 'title' or 'slug'
   
   // Check if this is a category page
   const isCategoryPage = location.pathname.startsWith('/blog/category/');
@@ -282,6 +322,87 @@ const BlogListPage = () => {
   const pageDescription = category 
     ? `Read our latest articles about ${category.toLowerCase()} and stay updated with the newest trends and insights.`
     : 'Explore our blog for the latest articles, insights, and updates from our team.';
+
+  // Define fetchPosts inside the component
+  const fetchPosts = async () => {
+    if (postsCache.data && initialLoad.current) {
+      // Use cache for first load to prevent flickering
+      setPosts(postsCache.data);
+      setLoading(false);
+      setVisibleLoading(false);
+      initialLoad.current = false;
+      
+      // Still update in the background
+      try {
+        // Add search parameters if present
+        const params = {};
+        if (searchQuery && searchType === 'title') {
+          params.title = searchQuery;
+        } else if (searchQuery && searchType === 'slug') {
+          params.slug = searchQuery;
+        }
+        
+        const data = await postAPI.getAll(params);
+        if (isMounted.current) {
+          // Ensure we're getting an array from the API response
+          const postsArray = Array.isArray(data.results) ? data.results : 
+                            (Array.isArray(data) ? data : []);
+          postsCache.data = postsArray;
+          setPosts(postsArray);
+        }
+      } catch (err) {
+        console.error('Error updating cached blog posts:', err);
+      }
+      
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      // Small delay before showing the loading overlay
+      const loadingTimer = setTimeout(() => {
+        if (isMounted.current && loading) {
+          setVisibleLoading(true);
+        }
+      }, 200);
+      
+      // Add search parameters if present
+      const params = {};
+      if (searchQuery && searchType === 'title') {
+        params.title = searchQuery;
+      } else if (searchQuery && searchType === 'slug') {
+        params.slug = searchQuery;
+      }
+      
+      const data = await postAPI.getAll(params);
+      console.log('Fetched blog posts:', data);
+      
+      clearTimeout(loadingTimer);
+      
+      if (isMounted.current) {
+        // Ensure we're getting an array from the API response
+        const postsArray = Array.isArray(data.results) ? data.results : 
+                          (Array.isArray(data) ? data : []);
+        postsCache.data = postsArray;
+        setPosts(postsArray);
+        
+        // Add a small delay before hiding loading states for smoother transition
+        setTimeout(() => {
+          if (isMounted.current) {
+            setLoading(false);
+            setVisibleLoading(false);
+          }
+        }, 300);
+      }
+    } catch (err) {
+      console.error('Error fetching blog posts:', err);
+      if (isMounted.current) {
+        setError('Failed to load blog posts. Please try again later.');
+        setLoading(false);
+        setVisibleLoading(false);
+      }
+    }
+  };
 
   // Handle page change for pagination
   const handlePageChange = (page) => {
@@ -313,77 +434,21 @@ const BlogListPage = () => {
 
   useEffect(() => {
     isMounted.current = true;
-    
-    const fetchPosts = async () => {
-      if (postsCache && initialLoad.current) {
-        // Use cache for first load to prevent flickering
-        setPosts(postsCache);
-        setLoading(false);
-        setVisibleLoading(false);
-        initialLoad.current = false;
-        
-        // Still update in the background
-        try {
-          const data = await postAPI.getAll();
-          if (isMounted.current) {
-            // Ensure we're getting an array from the API response
-            const postsArray = Array.isArray(data.results) ? data.results : 
-                              (Array.isArray(data) ? data : []);
-            postsCache = postsArray;
-            setPosts(postsArray);
-          }
-        } catch (err) {
-          console.error('Error updating cached blog posts:', err);
-        }
-        
-        return;
-      }
-      
-      try {
-        setLoading(true);
-        // Small delay before showing the loading overlay
-        const loadingTimer = setTimeout(() => {
-          if (isMounted.current && loading) {
-            setVisibleLoading(true);
-          }
-        }, 200);
-        
-        const data = await postAPI.getAll();
-        console.log('Fetched blog posts:', data);
-        
-        clearTimeout(loadingTimer);
-        
-        if (isMounted.current) {
-          // Ensure we're getting an array from the API response
-          const postsArray = Array.isArray(data.results) ? data.results : 
-                            (Array.isArray(data) ? data : []);
-          postsCache = postsArray;
-          setPosts(postsArray);
-          
-          // Add a small delay before hiding loading states for smoother transition
-          setTimeout(() => {
-            if (isMounted.current) {
-              setLoading(false);
-              setVisibleLoading(false);
-            }
-          }, 300);
-        }
-      } catch (err) {
-        console.error('Error fetching blog posts:', err);
-        if (isMounted.current) {
-          setError('Failed to load blog posts. Please try again later.');
-          setLoading(false);
-          setVisibleLoading(false);
-        }
-      }
-    };
-
     fetchPosts();
     
     return () => {
       isMounted.current = false;
     };
-  }, []);
+  }, [searchType]); // Only re-fetch when searchType changes, search button handles searchQuery changes
+
+  useEffect(() => {
+    if (!loading && posts.length === 0 && currentPage > 1) {
+      setCurrentPage(1);
+    }
+  }, [posts.length, currentPage, loading]);
+
+  // Define totalPages
+  const totalPages = Math.ceil(posts.length / 10);
 
   // Make sure posts is an array before filtering
   const filteredPosts = Array.isArray(posts) ? posts.filter(post => 
@@ -418,7 +483,22 @@ const BlogListPage = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <SearchIcon aria-hidden="true">🔍</SearchIcon>
+          <SearchTypeSelector>
+            <SearchTypeButton 
+              $active={searchType === 'title'}
+              onClick={() => setSearchType('title')}
+            >
+              Title
+            </SearchTypeButton>
+            <SearchTypeButton 
+              $active={searchType === 'slug'}
+              onClick={() => setSearchType('slug')}
+            >
+              Slug
+            </SearchTypeButton>
+          </SearchTypeSelector>
+          <SearchIcon aria-hidden="true"></SearchIcon>
+          <SearchButton onClick={fetchPosts}>Search</SearchButton>
         </SearchContainer>
 
         <BlogGrid>
@@ -438,7 +518,7 @@ const BlogListPage = () => {
               </FeaturedImageContainer>
               <PostContent>
                 <PostTitle>
-                  <Link to={`/blog/${post.slug || post.id}`}>{post.title}</Link>
+                  <Link to={`/blog/${post.slug}`}>{post.title}</Link>
                 </PostTitle>
                 <PostExcerpt>
                   {post.excerpt || 'Click to read more about our professional driving services and insights.'}
@@ -451,7 +531,7 @@ const BlogListPage = () => {
                   })}</PostDate>
                   <ReadTime>{post.read_time || '5 min read'}</ReadTime>
                 </PostMeta>
-                <ReadMoreButton to={`/blog/${post.slug || post.id}`}>
+                <ReadMoreButton to={`/blog/${post.slug}`}>
                   Read More
                 </ReadMoreButton>
               </PostContent>
@@ -477,25 +557,6 @@ const BlogListPage = () => {
       </LoadingOverlay>
       <BlogHeader activeTab="blog" />
       <MainContent ref={mainContentRef}>
-        {/* <Header>
-          <BlogTitle>{category ? `${category} Articles` : 'Our Blog'}</BlogTitle>
-          <BlogSubtitle>
-            {category
-              ? `Explore our latest articles about ${category.toLowerCase()}`
-              : 'Insights, news, and expert perspectives from our team to help you stay informed.'}
-          </BlogSubtitle>
-          
-          <SearchContainer>
-            <SearchInput 
-              type="text"
-              placeholder="Search articles..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <SearchIcon aria-hidden="true">🔍</SearchIcon>
-          </SearchContainer>
-        </Header> */}
-        
         {renderContent()}
         
         <Pagination>

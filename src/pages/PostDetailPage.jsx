@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import Button from '../components/Button';
 import Comment from '../components/Comment';
 import CommentForm from '../components/CommentForm';
 import SEO from '../components/SEO';
-import { postAPI, commentAPI } from '../api/apiService';
+import { postAPI, commentAPI } from '../api';
 import { formatDate } from '../utils/dateUtils';
 import placeholderImage from '../assets/placeholder-image.js';
+import { useBlog } from '../context/hooks/useBlog';
 
 const Container = styled.div`
   width: 100%;
@@ -230,7 +231,7 @@ const CommentHeader = styled.div`
   margin-bottom: 1.5rem;
 `;
 
-const ShareSection = styled.div`
+const ShareContainer = styled.div`
   margin: 3rem 0;
   padding: 1.5rem;
   background: #f8f8f8;
@@ -290,16 +291,11 @@ const ShareButton = styled.button`
 const PostDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  
+  const { fetchPost, loading, error } = useBlog();
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
-  const [pendingComments, setPendingComments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [commentsLoading, setCommentsLoading] = useState(false);
-  const [commentCount, setCommentCount] = useState(0);
-  const [modalImage, setModalImage] = useState(null);
   
   // Get the current URL for sharing
   const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
@@ -321,83 +317,39 @@ const PostDetailPage = () => {
     return excerpt + '...';
   };
   
-  const fetchComments = async () => {
+  // Wrap fetchComments in useCallback
+  const fetchComments = useCallback(async (postId) => {
+    if (!postId) return;
+    
     try {
       setCommentsLoading(true);
-      console.log(`Fetching comments for post ${id} - ${new Date().toISOString()}`);
+      // Call the API to fetch comments
+      const response = await fetch(`/api/comments/?post=${postId}`);
+      const data = await response.json();
       
-      // Fetch approved comments for the post
-      const approvedCommentsData = await commentAPI.getApproved(id);
-      console.log('Approved comments response:', approvedCommentsData);
-      
-      // Ensure we handle both array and object with results property formats
-      if (Array.isArray(approvedCommentsData)) {
-        setComments(approvedCommentsData);
-      } else if (approvedCommentsData && Array.isArray(approvedCommentsData.results)) {
-        setComments(approvedCommentsData.results);
-      } else {
-        console.warn('Unexpected format for approved comments:', approvedCommentsData);
-        setComments([]);
-      }
-
-      // Also fetch pending comments for this post - only the user's own pending comments
-      const pendingCommentsData = await commentAPI.getPending(id);
-      console.log('Pending comments response:', pendingCommentsData);
-      
-      // Ensure we handle both array and object with results property formats
-      if (Array.isArray(pendingCommentsData)) {
-        setPendingComments(pendingCommentsData);
-      } else if (pendingCommentsData && Array.isArray(pendingCommentsData.results)) {
-        setPendingComments(pendingCommentsData.results);
-      } else {
-        console.warn('Unexpected format for pending comments:', pendingCommentsData);
-        setPendingComments([]);
+      if (Array.isArray(data)) {
+        setComments(data);
+      } else if (data.results && Array.isArray(data.results)) {
+        setComments(data.results);
       }
     } catch (err) {
       console.error('Error fetching comments:', err);
-      // Set empty arrays on error to avoid UI issues
-      setComments([]);
-      setPendingComments([]);
     } finally {
       setCommentsLoading(false);
     }
-  };
+  }, []);
   
+  // Fetch post on mount
   useEffect(() => {
-    const fetchPost = async () => {
-      try {
-        setLoading(true);
-        const data = await postAPI.getById(id);
-        setPost(data);
-        
-        // Fetch comments
-        await fetchComments();
-        
-        // Debug - check approved comments status
-        try {
-          const approvedCheck = await commentAPI.checkApproved(id);
-          console.log('Debug - Approved comments check:', approvedCheck);
-          
-          if (approvedCheck.counts.approved > 0 && comments.length === 0) {
-            console.warn('Warning: There are approved comments in the database, but none were loaded in the UI');
-            // Try to re-fetch comments after a short delay
-            setTimeout(fetchComments, 1000);
-          }
-        } catch (debugErr) {
-          console.error('Debug check error:', debugErr);
-        }
-        
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching post:', err);
-        setError('Failed to load post. It may have been deleted or does not exist.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     fetchPost();
-  }, [id]);
+  }, [fetchPost]);
+  
+  // Fetch comments when post changes
+  useEffect(() => {
+    if (post?.id) {
+      fetchComments(post.id);
+    }
+  }, [post?.id, fetchComments, comments.length]);
   
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
@@ -431,7 +383,7 @@ const PostDetailPage = () => {
       // Create the comment
       await commentAPI.create(commentData);
       // Refresh comments list
-      await fetchComments();
+      await fetchComments(id);
     } catch (err) {
       console.error('Error submitting comment:', err);
       alert('Failed to submit comment. Please try again.');
@@ -454,7 +406,7 @@ const PostDetailPage = () => {
       console.log('Debug - Approved comments check before refresh:', approvedCheck);
       
       // Fetch the comments
-      await fetchComments();
+      await fetchComments(id);
       
       // Show a message if there are approved comments in the database but none showing in the UI
       if (approvedCheck.counts.approved > 0 && comments.length === 0) {
@@ -489,6 +441,13 @@ const PostDetailPage = () => {
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}%20${encodeURIComponent(url)}`, '_blank');
   };
   
+  const handleShare = (platform) => {
+    if (platform === 'twitter') shareOnTwitter();
+    else if (platform === 'facebook') shareOnFacebook();
+    else if (platform === 'linkedin') shareOnLinkedIn();
+    else if (platform === 'whatsapp') shareOnWhatsApp();
+  };
+  
   if (loading) {
     return <Message>Loading post...</Message>;
   }
@@ -499,6 +458,19 @@ const PostDetailPage = () => {
   
   const formattedDate = formatDate(post.created_at);
   const plainTextExcerpt = getPlainTextExcerpt(post.content);
+  
+  // Add a share section that uses the handleShare function
+  const ShareSection = () => (
+    <ShareContainer>
+      <h3>Share this post:</h3>
+      <ShareButtons>
+        <ShareButton onClick={() => handleShare('twitter')}>Twitter</ShareButton>
+        <ShareButton onClick={() => handleShare('facebook')}>Facebook</ShareButton>
+        <ShareButton onClick={() => handleShare('linkedin')}>LinkedIn</ShareButton>
+        <ShareButton onClick={() => handleShare('whatsapp')}>WhatsApp</ShareButton>
+      </ShareButtons>
+    </ShareContainer>
+  );
   
   return (
     <Container>
@@ -547,24 +519,7 @@ const PostDetailPage = () => {
       
       <Content dangerouslySetInnerHTML={{ __html: post.content }} />
       
-      {/* Replace SocialShare component with inline share section */}
-      <ShareSection>
-        <h3>Share this post</h3>
-        <ShareButtons>
-          <ShareButton className="twitter" onClick={shareOnTwitter}>
-            Twitter
-          </ShareButton>
-          <ShareButton className="facebook" onClick={shareOnFacebook}>
-            Facebook
-          </ShareButton>
-          <ShareButton className="linkedin" onClick={shareOnLinkedIn}>
-            LinkedIn
-          </ShareButton>
-          <ShareButton className="whatsapp" onClick={shareOnWhatsApp}>
-            WhatsApp
-          </ShareButton>
-        </ShareButtons>
-      </ShareSection>
+      <ShareSection />
       
       {post.images && post.images.length > 0 && (
         <AdditionalImages>
@@ -606,7 +561,7 @@ const PostDetailPage = () => {
         <CommentsList>
           {commentsLoading ? (
             <Message>Loading comments...</Message>
-          ) : comments.length === 0 && pendingComments.length === 0 ? (
+          ) : comments.length === 0 ? (
             <Message>No comments yet. Be the first to comment!</Message>
           ) : (
             <>
@@ -619,24 +574,6 @@ const PostDetailPage = () => {
                   showActionButtons={false}
                 />
               ))}
-              
-              {pendingComments.length > 0 && (
-                <div style={{ marginTop: '2rem' }}>
-                  <h3>Your Pending Comments</h3>
-                  <p style={{ color: '#6c757d', fontSize: '0.9rem', marginBottom: '1rem' }}>
-                    These comments are awaiting approval from the site administrator.
-                  </p>
-                  {pendingComments.map(comment => (
-                    <Comment 
-                      key={comment.id} 
-                      comment={comment}
-                      onApprove={() => {}}
-                      onReject={() => {}}
-                      showActionButtons={false}
-                    />
-                  ))}
-                </div>
-              )}
             </>
           )}
         </CommentsList>

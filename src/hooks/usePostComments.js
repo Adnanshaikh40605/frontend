@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { commentAPI } from '../api/apiService';
+import { commentAPI } from '../api';
 
 /**
  * Custom hook for managing comments for a specific blog post

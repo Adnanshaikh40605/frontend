@@ -1,17 +1,8 @@
-import { createContext, useContext, useState, useCallback } from 'react';
-import { commentAPI } from '../api/apiService';
+import { createContext, useState, useCallback } from 'react';
+import { commentAPI } from '../api';
 
 // Create context
 const CommentContext = createContext();
-
-// Custom hook to use the comment context
-export const useComments = () => {
-  const context = useContext(CommentContext);
-  if (!context) {
-    throw new Error('useComments must be used within a CommentProvider');
-  }
-  return context;
-};
 
 // Provider component
 export const CommentProvider = ({ children }) => {
@@ -50,7 +41,7 @@ export const CommentProvider = ({ children }) => {
   }, []);
 
   // Fetch all comments for a post
-  const fetchComments = useCallback(async (postId, page = 1, pageSize = 10, append = false) => {
+  const fetchComments = useCallback(async (postId, page = 1, append = false) => {
     try {
       if (!postId) return { approved: [], pending: [] };
       
@@ -111,13 +102,13 @@ export const CommentProvider = ({ children }) => {
   const loadMoreComments = useCallback(async (postId) => {
     if (commentPagination.hasMore && !loading) {
       const page = Math.floor(comments.length / 10) + 1;
-      return fetchComments(postId, page, 10, true);
+      return fetchComments(postId, page, true);
     }
     return { approved: [], pending: [] };
   }, [commentPagination.hasMore, comments.length, loading, fetchComments]);
 
   // Fetch all pending comments (across all posts)
-  const fetchPendingComments = useCallback(async (page = 1, pageSize = 10, append = false) => {
+  const fetchPendingComments = useCallback(async (page = 1, append = false) => {
     try {
       setLoading(true);
       setError(null);
@@ -157,7 +148,7 @@ export const CommentProvider = ({ children }) => {
   const loadMorePendingComments = useCallback(async () => {
     if (pendingPagination.hasMore && !loading) {
       const page = Math.floor(pendingComments.length / 10) + 1;
-      return fetchPendingComments(page, 10, true);
+      return fetchPendingComments(page, true);
     }
     return [];
   }, [pendingPagination.hasMore, pendingComments.length, loading, fetchPendingComments]);

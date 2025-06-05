@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import PropTypes from 'prop-types';
 import BlogPostCard from './BlogPostCard';
 import SkeletonLoader from './SkeletonLoader';
 import { postAPI } from '../api/apiService';
@@ -54,56 +55,59 @@ const BlogPostList = ({
   limit = 6, 
   loadMoreIncrement = 3, 
   showLoadMore = true,
-  filter = {},
-  title = "Latest Posts" 
+  title = "Latest Posts",
+  posts: initialPosts = [],
+  maxPosts = null
 }) => {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [visiblePostCount, setVisiblePostCount] = useState(limit);
-  const [hasMore, setHasMore] = useState(true);
-  const [initialLoad, setInitialLoad] = useState(true);
+  const [visiblePosts, setVisiblePosts] = useState([]);
+  const [visiblePostCount, setVisiblePostCount] = useState(10);
+  const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Update useEffect to include visiblePostCount dependency
+  useEffect(() => {
+    if (initialPosts?.length > 0) {
+      // Apply maxPosts limit if provided
+      const effectivePosts = maxPosts ? initialPosts.slice(0, maxPosts) : initialPosts;
+      const postsToShow = effectivePosts.slice(0, visiblePostCount);
+      setVisiblePosts(postsToShow);
+      setHasMore(effectivePosts.length > visiblePostCount);
+    } else {
+      setVisiblePosts([]);
+      setHasMore(false);
+    }
+  }, [initialPosts, visiblePostCount, maxPosts]);
 
   // Fetch posts when component mounts or filter changes
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        setLoading(true);
         setError(null);
         
-        // Build query params from filter object
-        const response = await postAPI.getAll({
-          ...filter,
-          limit: 100 // Get more than we need to check if there are more
-        });
+        // Use the postAPI service to fetch posts
+        const response = await postAPI.getAll();
         
-        if (!Array.isArray(response)) {
+        // Handle the response
+        if (response) {
           // Handle paginated response
           if (response.results && Array.isArray(response.results)) {
-            setPosts(response.results);
+            setVisiblePosts(response.results);
             setHasMore(!!response.next);
           } else {
-            throw new Error('Invalid response format');
+            // Handle direct array response
+            setVisiblePosts(response);
+            setHasMore(response.length > visiblePostCount);
           }
-        } else {
-          // Handle direct array response
-          setPosts(response);
-          setHasMore(response.length > visiblePostCount);
         }
-        
-        setInitialLoad(false);
       } catch (err) {
         console.error('Error fetching posts:', err);
         setError('Failed to load blog posts. Please try again later.');
-        setInitialLoad(false);
-      } finally {
-        setLoading(false);
       }
     };
     
     fetchPosts();
-  }, [filter]);
+  }, [visiblePostCount]);
 
   // Handle load more click
   const handleLoadMore = () => {
@@ -115,12 +119,12 @@ const BlogPostList = ({
       setLoadingMore(false);
       
       // Check if we have more posts to show
-      setHasMore(posts.length > visiblePostCount + loadMoreIncrement);
+      setHasMore(visiblePosts.length > visiblePostCount + loadMoreIncrement);
     }, 500);
   };
 
   // Show skeleton loader during initial load
-  if (initialLoad) {
+  if (visiblePosts.length === 0) {
     return (
       <div>
         <h2>{title}</h2>
@@ -134,8 +138,6 @@ const BlogPostList = ({
   if (error) {
     return <ErrorMessage>{error}</ErrorMessage>;
   }
-
-  const visiblePosts = posts.slice(0, visiblePostCount);
 
   return (
     <div>
@@ -166,6 +168,15 @@ const BlogPostList = ({
       )}
     </div>
   );
+};
+
+BlogPostList.propTypes = {
+  limit: PropTypes.number,
+  loadMoreIncrement: PropTypes.number,
+  showLoadMore: PropTypes.bool,
+  title: PropTypes.string,
+  posts: PropTypes.array,
+  maxPosts: PropTypes.number
 };
 
 export default BlogPostList; 

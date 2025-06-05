@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import RichTextEditor from '../components/RichTextEditor';
 import Button from '../components/Button';
 import { postAPI } from '../api/apiService';
+import slugify from '../utils/slugify';
+import { clearPostCache } from '../pages/BlogPostPage';
+import CloseIcon from '@mui/icons-material/Close';
 
 const Container = styled.div`
   width: 100%;
@@ -150,9 +153,13 @@ const RemoveButton = styled.button`
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 14px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   transition: background-color 0.2s;
+  padding: 0;
+  
+  svg {
+    font-size: 16px;
+  }
   
   &:hover {
     background-color: #c82333;
@@ -174,10 +181,33 @@ const ImageContainer = styled.div`
   position: relative;
 `;
 
-const ErrorMessage = styled.p`
-  color: #dc3545;
+const ErrorContainer = styled.div`
+  padding: 1rem;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+`;
+
+const SuccessContainer = styled.div`
+  padding: 1rem;
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+`;
+
+const SuccessMessage = styled.p`
+  color: #155724;
   font-size: 0.875rem;
-  margin: 0.5rem 0 0 0;
+  margin: 0;
+  font-weight: 500;
+`;
+
+const ErrorMessage = styled.p`
+  color: #721c24;
+  font-size: 0.875rem;
+  margin: 0;
   font-weight: 500;
 `;
 
@@ -281,271 +311,116 @@ const SectionDivider = styled.hr`
   margin: 0;
 `;
 
-// Add a styled hint text component
-const HintText = styled.p`
-  font-size: 0.875rem;
-  color: #6c757d;
-  margin-top: 0.25rem;
+const SlugInputGroup = styled.div`
+  position: relative;
 `;
 
-// Add a styled button for generating slug
-const SlugGenerateButton = styled.button`
-  background-color: #e9ecef;
-  border: 1px solid #ced4da;
-  border-radius: 0 6px 6px 0;
-  padding: 0 0.75rem;
-  cursor: pointer;
-  height: 100%;
-  transition: background-color 0.2s;
-  
-  &:hover {
-    background-color: #dee2e6;
-  }
-`;
-
-// Add a styled input group for slug field
-const InputGroup = styled.div`
-  display: flex;
-  align-items: stretch;
-  width: 100%;
-  
-  input {
-    border-radius: 6px 0 0 6px;
-    flex: 1;
-  }
-`;
-
-// Add styled components for slug validation
-const ValidationMessage = styled.div`
-  font-size: 0.875rem;
-  margin-top: 0.25rem;
+const SlugValidationMessage = styled.div`
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  color: ${props => props.$isValid ? '#28a745' : '#dc3545'};
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  
-  &.valid {
-    color: #28a745;
-  }
-  
-  &.invalid {
-    color: #dc3545;
-  }
-  
-  &.checking {
-    color: #6c757d;
-  }
 `;
 
-const ValidationIcon = styled.span`
-  display: inline-flex;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: bold;
+const SlugInputWithValidation = styled(Input)`
+  padding-right: ${props => props.$showValidation ? '150px' : '0.9rem'};
+  border-color: ${props => {
+    if (!props.$touched) return '#dce0e5';
+    return props.$isValid ? '#28a745' : '#dc3545';
+  }};
   
-  &.valid {
-    background-color: #28a745;
-    color: white;
-  }
-  
-  &.invalid {
-    background-color: #dc3545;
-    color: white;
-  }
-  
-  &.checking {
-    background-color: #6c757d;
-    color: white;
+  &:focus {
+    border-color: ${props => {
+      if (!props.$touched) return '#80bdff';
+      return props.$isValid ? '#28a745' : '#dc3545';
+    }};
+    box-shadow: 0 0 0 2px ${props => {
+      if (!props.$touched) return 'rgba(0, 123, 255, 0.25)';
+      return props.$isValid ? 'rgba(40, 167, 69, 0.25)' : 'rgba(220, 53, 69, 0.25)';
+    }};
   }
 `;
-
-// Add a helper function to generate slug from title
-const generateSlugFromTitle = (title) => {
-  return title
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '') // Remove special characters
-    .replace(/\s+/g, '-')     // Replace spaces with hyphens
-    .replace(/--+/g, '-')     // Replace multiple hyphens with single hyphen
-    .replace(/^-+|-+$/g, '')  // Remove leading/trailing hyphens
-    .trim();
-};
 
 const PostFormPage = () => {
-  const { id } = useParams();
+  const { slug, id } = useParams();
   const navigate = useNavigate();
-  const isEditMode = Boolean(id);
-  
-  const [formData, setFormData] = useState({
+  const [post, setPost] = useState({
     title: '',
-    content: '',
     slug: '',
-    published: false,
-    featured_image: null,
-    additional_images: []
+    content: '',
+    published: true,
+    featured: false,
   });
-  
-  const [preview, setPreview] = useState({
-    featured_image: null,
-    additional_images: []
-  });
-  
+  const [featuredImage, setFeaturedImage] = useState(null);
+  const [featuredImagePreview, setFeaturedImagePreview] = useState('');
+  const [additionalImages, setAdditionalImages] = useState([]);
+  const [additionalImagePreviews, setAdditionalImagePreviews] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [isEdit, setIsEdit] = useState(false);
+  const [slugEdited, setSlugEdited] = useState(false);
   const [slugValidation, setSlugValidation] = useState({
+    isChecking: false,
     isValid: true,
-    message: '',
-    isChecking: false
+    message: ''
   });
-  
-  // Add a debounce timer ref for slug validation
-  const slugValidationTimer = useRef(null);
-  
-  // Add a function to generate slug from title
-  const handleGenerateSlug = () => {
-    if (formData.title) {
-      const generatedSlug = generateSlugFromTitle(formData.title);
-      setFormData({
-        ...formData,
-        slug: generatedSlug
-      });
-      
-      // Validate the generated slug
-      validateSlug(generatedSlug);
-    }
-  };
-  
-  // Add a function to validate slug
-  const validateSlug = async (slug) => {
-    // Clear any previous validation timer
-    if (slugValidationTimer.current) {
-      clearTimeout(slugValidationTimer.current);
-    }
-    
-    // Don't validate empty slugs
-    if (!slug) {
-      setSlugValidation({
-        isValid: true,
-        message: '',
-        isChecking: false
-      });
-      return;
-    }
-    
-    // Set checking state
-    setSlugValidation(prev => ({
-      ...prev,
-      isChecking: true
-    }));
-    
-    // First do client-side validation
-    const slugRegex = /^[a-z0-9-]+$/;
-    const isValidFormat = slugRegex.test(slug);
-    
-    if (!isValidFormat) {
-      setSlugValidation({
-        isValid: false,
-        message: 'Slug must contain only lowercase letters, numbers, and hyphens',
-        isChecking: false
-      });
-      setErrors(prev => ({
-        ...prev,
-        slug: 'Slug must contain only lowercase letters, numbers, and hyphens'
-      }));
-      return;
-    }
-    
-    // Set a debounce timer to avoid too many API calls
-    slugValidationTimer.current = setTimeout(async () => {
-      try {
-        const result = await postAPI.validateSlug(slug, isEditMode ? id : null);
-        setSlugValidation({
-          isValid: result.valid,
-          message: result.message,
-          isChecking: false
-        });
-        
-        // Update errors state
-        if (!result.valid) {
-          setErrors(prev => ({
-            ...prev,
-            slug: result.message
-          }));
-        } else {
-          setErrors(prev => {
-            const newErrors = { ...prev };
-            delete newErrors.slug;
-            return newErrors;
-          });
-        }
-      } catch (error) {
-        console.error('Error validating slug:', error);
-        
-        // If API validation fails, do a basic client-side validation for uniqueness
-        // We can't truly validate uniqueness on the client side, but we can at least check format
-        setSlugValidation({
-          isValid: isValidFormat,
-          message: isValidFormat ? 'Slug format is valid (uniqueness could not be verified)' : 'Invalid slug format',
-          isChecking: false
-        });
-        
-        if (!isValidFormat) {
-          setErrors(prev => ({
-            ...prev,
-            slug: 'Invalid slug format'
-          }));
-        }
-      }
-    }, 500); // 500ms debounce
-  };
+  const [postIdentifier, setPostIdentifier] = useState(slug || id);
   
   useEffect(() => {
-    if (isEditMode) {
+    // If slug or id is provided, fetch the post data for editing
+    if (slug || id) {
+      setIsEdit(true);
       fetchPost();
     }
-  }, [id]);
-  
-  // Add an effect to clean up the timer on unmount
-  useEffect(() => {
-    return () => {
-      if (slugValidationTimer.current) {
-        clearTimeout(slugValidationTimer.current);
-      }
-    };
-  }, []);
+  }, [slug, id]);
   
   const fetchPost = async () => {
     try {
       setLoading(true);
-      const data = await postAPI.getById(id);
+      let data;
       
-      setFormData({
-        title: data.title || '',
-        content: data.content || '',
-        slug: data.slug || '',
-        published: Boolean(data.published),
-        featured_image: null, // We'll keep the image in preview state
-        additional_images: []
-      });
-      
-      if (data.featured_image) {
-        setPreview(prev => ({
-          ...prev,
-          featured_image: data.featured_image
-        }));
+      // Try to get the post using the available identifier
+      if (slug) {
+        // Use getBySlug if slug is available (preferred)
+        data = await postAPI.getBySlug(slug);
+        setPostIdentifier(data.slug);
+      } else if (id) {
+        // Fallback to getById if only ID is available
+        data = await postAPI.getById(id);
+        setPostIdentifier(data.slug);
+        
+        // Update the URL to use the slug instead of ID
+        navigate(`/admin/posts/${data.slug}/edit`, { replace: true });
       }
       
-      if (data.additional_images && data.additional_images.length > 0) {
-        setPreview(prev => ({
-          ...prev,
-          additional_images: data.additional_images
-        }));
+      if (data) {
+        setPost({
+          title: data.title || '',
+          slug: data.slug || '',
+          content: data.content || '',
+          published: data.published || true,
+          featured: data.featured || false,
+        });
+        
+        if (data.featured_image) {
+          setFeaturedImagePreview(data.featured_image);
+        }
+        
+        if (data.images && data.images.length > 0) {
+          const previews = data.images.map(img => img.image);
+          setAdditionalImagePreviews(previews);
+        }
       }
-    } catch (error) {
-      console.error('Error fetching post:', error);
-    } finally {
+      
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching post:', err);
+      setError('Failed to fetch post data');
       setLoading(false);
     }
   };
@@ -553,119 +428,167 @@ const PostFormPage = () => {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? checked : value,
-    });
-    
-    // Validate slug when it changes
-    if (name === 'slug') {
-      validateSlug(value);
+    if (type === 'checkbox') {
+      setPost(prev => ({ ...prev, [name]: checked }));
+    } else {
+      setPost(prev => ({ ...prev, [name]: value }));
     }
     
-    // Clear errors when field is changed
-    if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: '',
+    // Auto-generate slug from title if slug hasn't been manually edited
+    if (name === 'title' && !slugEdited) {
+      const generatedSlug = slugify(value, {
+        lower: true,        // Convert to lowercase
+        strict: true,       // Strip special characters
+        remove: /[*+~.()'"!:@]/g, // Remove specific characters
+        trim: true          // Trim leading/trailing spaces
       });
+      
+      setPost(prev => ({ ...prev, slug: generatedSlug }));
+    }
+  };
+  
+  const checkSlugUniqueness = async (slug) => {
+    if (!slug) return;
+    
+    try {
+      setSlugValidation(prev => ({ ...prev, isChecking: true }));
+      
+      // Make API call to check if slug exists
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/posts/${slug}/`);
+      
+      if (response.status === 404) {
+        // Slug doesn't exist, it's valid
+        setSlugValidation({
+          isChecking: false,
+          isValid: true,
+          message: 'Slug is available'
+        });
+      } else if (response.ok) {
+        // Slug exists, check if it's the current post
+        const data = await response.json();
+        
+        if (isEdit && data.id === parseInt(slug)) {
+          // It's the current post, so slug is valid
+          setSlugValidation({
+            isChecking: false,
+            isValid: true,
+            message: 'Current slug'
+          });
+        } else {
+          // Slug exists for another post
+          setSlugValidation({
+            isChecking: false,
+            isValid: false,
+            message: 'This slug is already taken'
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error checking slug uniqueness:', error);
+      // Assume valid in case of error to not block submission
+      setSlugValidation({
+        isChecking: false,
+        isValid: true,
+        message: ''
+      });
+    }
+  };
+  
+  const handleSlugChange = (e) => {
+    setSlugEdited(true);
+    handleChange(e);
+    
+    // Debounce slug check
+    const slug = e.target.value;
+    if (slug) {
+      // Clear any previous timeout
+      if (window.slugCheckTimeout) {
+        clearTimeout(window.slugCheckTimeout);
+      }
+      
+      // Set a new timeout
+      window.slugCheckTimeout = setTimeout(() => {
+        checkSlugUniqueness(slug);
+      }, 500); // Wait 500ms after typing stops
     }
   };
   
   const handleEditorChange = (content) => {
-    setFormData({
-      ...formData,
-      content,
-    });
-    
-    if (errors.content) {
-      setErrors({
-        ...errors,
-        content: '',
-      });
-    }
+    setPost(prev => ({ ...prev, content }));
   };
   
   const handleFeaturedImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData({
-        ...formData,
-        featured_image: file,
-      });
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setFeaturedImage(file);
       
-      setPreview({
-        ...preview,
-        featured_image: file
-      });
-      
-      if (errors.featured_image) {
-        setErrors({
-          ...errors,
-          featured_image: '',
-        });
-      }
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setFeaturedImagePreview(event.target.result);
+      };
+      reader.readAsDataURL(file);
     }
   };
   
   const handleRemoveFeaturedImage = () => {
-    setFormData({
-      ...formData,
-      featured_image: null,
-    });
+    setFeaturedImage(null);
+    setFeaturedImagePreview('');
     
-    setPreview({
-      ...preview,
-      featured_image: null
-    });
+    // If we're editing, also clear the image from the post object
+    if (isEdit) {
+      setPost(prev => ({ ...prev, featured_image: null }));
+    }
   };
   
   const handleAdditionalImagesChange = (e) => {
-    const files = Array.from(e.target.files);
-    
-    if (files.length > 0) {
-      setFormData({
-        ...formData,
-        additional_images: [...formData.additional_images, ...files],
-      });
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      setAdditionalImages(prev => [...prev, ...files]);
       
-      if (errors.additional_images) {
-        setErrors({
-          ...errors,
-          additional_images: '',
-        });
-      }
+      // Create previews
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          setAdditionalImagePreviews(prev => [...prev, event.target.result]);
+        };
+        reader.readAsDataURL(file);
+      });
     }
   };
   
   const handleRemoveAdditionalImage = (index) => {
-    const newImages = [...formData.additional_images];
-    newImages.splice(index, 1);
-    setFormData({
-      ...formData,
-      additional_images: newImages,
-    });
+    setAdditionalImages(prev => prev.filter((_, i) => i !== index));
+    setAdditionalImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
   
   const validate = () => {
-    const newErrors = {};
-    if (!formData.title.trim()) {
-      newErrors.title = 'Title is required';
-    }
-    if (!formData.content.trim()) {
-      newErrors.content = 'Content is required';
-    }
-    if (!formData.featured_image && !preview.featured_image) {
-      newErrors.featured_image = 'Featured image is required';
+    let isValid = true;
+    let errorMessage = '';
+    
+    if (!post.title.trim()) {
+      errorMessage = 'Title is required';
+      isValid = false;
+    } else if (!post.slug.trim()) {
+      errorMessage = 'Slug is required';
+      isValid = false;
+    } else if (!slugValidation.isValid) {
+      errorMessage = 'Please use a unique slug';
+      isValid = false;
+    } else if (!post.content.trim()) {
+      errorMessage = 'Content is required';
+      isValid = false;
     }
     
-    // Add slug validation
-    if (formData.slug && !slugValidation.isValid) {
-      newErrors.slug = slugValidation.message || 'Invalid slug format';
+    if (!isValid) {
+      setError(errorMessage);
+      // Scroll to the top to show the error
+      window.scrollTo(0, 0);
+    } else {
+      setError('');
     }
     
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return isValid;
   };
   
   const handleSubmit = async (e) => {
@@ -677,46 +600,135 @@ const PostFormPage = () => {
     
     try {
       setLoading(true);
+      setError(null);
       
-      // Create a copy of formData that includes the featured_image from preview if needed
-      const submissionData = { ...formData };
+      // Create data object for submission
+      const postData = {
+        title: post.title,
+        slug: post.slug,
+        content: post.content,
+        published: post.published,
+        featured: post.featured
+      };
       
-      // If formData doesn't have featured_image but preview does, use a placeholder value
-      // This is for edit mode when keeping the existing image
-      if (!submissionData.featured_image && preview.featured_image) {
-        // Send the URL/path string in edit mode
-        if (typeof preview.featured_image === 'string') {
-          // Extract just the filename from the URL path
-          const urlParts = preview.featured_image.split('/');
-          const filename = urlParts[urlParts.length - 1];
-          submissionData.featured_image = filename;
-        } else {
-          submissionData.featured_image = preview.featured_image;
+      // Add featured image if present
+      if (featuredImage) {
+        postData.featured_image = featuredImage;
+      }
+      
+      // Add additional images if present
+      additionalImages.forEach((image, index) => {
+        postData[`additional_images[${index}]`] = image;
+      });
+      
+      console.log('Submitting post data:', postData);
+      
+      let result;
+      let retryCount = 0;
+      const maxRetries = 3;
+      
+      if (isEdit && postIdentifier) {
+        // For update operations, implement retry logic
+        while (retryCount < maxRetries) {
+          try {
+            result = await postAPI.update(postIdentifier, postData);
+            setSuccess('Post updated successfully!');
+            
+            // Clear the post cache to ensure fresh data is loaded next time
+            clearPostCache(postIdentifier);
+            
+            // Navigate after a short delay to show the success message
+            setTimeout(() => {
+              navigate('/admin/posts');
+            }, 1500);
+            
+            // Break out of retry loop on success
+            break;
+          } catch (updateError) {
+            retryCount++;
+            console.error(`Update attempt ${retryCount} failed:`, updateError);
+            
+            if (retryCount >= maxRetries) {
+              // Extract specific error messages if available
+              if (updateError.response && updateError.response.detail) {
+                throw new Error(`Update failed: ${updateError.response.detail}`);
+              } else if (updateError.message.includes('401') || updateError.message.includes('Authentication')) {
+                throw new Error('Your session has expired. Please log in again.');
+              } else {
+                throw new Error(`Failed to update post: ${updateError.message}`);
+              }
+            }
+            
+            // Wait before retrying (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          }
+        }
+      } else {
+        try {
+          result = await postAPI.create(postData);
+          setSuccess('Post created successfully!');
+          
+          // Navigate after a short delay to show the success message
+          setTimeout(() => {
+            navigate('/admin/posts');
+          }, 1500);
+        } catch (createError) {
+          console.error('Error creating post:', createError);
+          
+          // Handle specific error cases
+          if (createError.response && createError.response.slug) {
+            throw new Error(`A post with this slug already exists. Please choose a different slug.`);
+          } else if (createError.message.includes('400')) {
+            throw new Error('Missing or invalid data. Please check all required fields.');
+          } else if (createError.message.includes('401') || createError.message.includes('Authentication')) {
+            throw new Error('Your session has expired. Please log in again.');
+          } else {
+            throw createError;
+          }
         }
       }
+    } catch (err) {
+      console.error('Error saving post:', err);
       
-      // If no slug is provided, generate one from the title
-      if (!submissionData.slug.trim()) {
-        submissionData.slug = generateSlugFromTitle(submissionData.title);
-      }
-
-      console.log('Submitting post with data:', submissionData);
+      // Extract error details if available
+      let errorMessage = 'Failed to save post. Please try again.';
       
-      if (isEditMode) {
-        await postAPI.update(id, submissionData);
-        navigate(`/posts`);
-      } else {
-        await postAPI.create(submissionData);
-        navigate(`/posts`);
+      if (err.message) {
+        errorMessage = err.message;
       }
-    } catch (error) {
-      console.error('Error saving post:', error);
-      setErrors(prev => ({
-        ...prev,
-        form: 'Failed to save post. Please try again.'
-      }));
+      
+      setError(errorMessage);
+      
+      // Scroll to the top to show the error
+      window.scrollTo(0, 0);
     } finally {
       setLoading(false);
+    }
+  };
+  
+  // Add the onImageUpload handler function
+  const handleImageUpload = async (file) => {
+    try {
+      // Create a temporary URL for the image
+      const objectUrl = URL.createObjectURL(file);
+      
+      // In a real implementation, you would upload the file to your server
+      // and return the URL of the uploaded image
+      // For now, we'll just return the temporary URL
+      return objectUrl;
+      
+      // Example of a real implementation:
+      // const formData = new FormData();
+      // formData.append('image', file);
+      // const response = await fetch('/api/upload', {
+      //   method: 'POST',
+      //   body: formData
+      // });
+      // const data = await response.json();
+      // return data.url;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return null;
     }
   };
   
@@ -726,74 +738,64 @@ const PostFormPage = () => {
   
   return (
     <Container>
-      <BackLink to="/posts">
+      <BackLink to="/admin/posts">
         ← Back to Posts
       </BackLink>
       
-      <Title>{isEditMode ? 'Edit Blog Post' : 'Create New Blog Post'}</Title>
+      <Title>{isEdit ? 'Edit Blog Post' : 'Create New Blog Post'}</Title>
       
       <Form onSubmit={handleSubmit}>
+        {error && (
+          <ErrorContainer>
+            <ErrorMessage>{error}</ErrorMessage>
+          </ErrorContainer>
+        )}
+        
+        {success && (
+          <SuccessContainer>
+            <SuccessMessage>{success}</SuccessMessage>
+          </SuccessContainer>
+        )}
+        
         <FormGroup>
           <Label htmlFor="title">Title</Label>
           <Input
             type="text"
             id="title"
             name="title"
-            value={formData.title}
+            value={post.title}
             onChange={handleChange}
             placeholder="Enter post title"
           />
-          {errors.title && <ErrorMessage>{errors.title}</ErrorMessage>}
         </FormGroup>
         
         <FormGroup>
-          <Label htmlFor="slug">Slug (URL)</Label>
-          <InputGroup>
-            <Input
+          <Label htmlFor="slug">Slug</Label>
+          <SlugInputGroup>
+            <SlugInputWithValidation
               type="text"
               id="slug"
               name="slug"
-              value={formData.slug}
-              onChange={handleChange}
-              placeholder="post-url-slug"
+              value={post.slug}
+              onChange={handleSlugChange}
+              placeholder="Enter post slug"
+              $touched={slugEdited}
+              $isValid={slugValidation.isValid}
+              $showValidation={slugEdited}
             />
-            <SlugGenerateButton 
-              type="button" 
-              onClick={handleGenerateSlug}
-              title="Generate slug from title"
-            >
-              Generate
-            </SlugGenerateButton>
-          </InputGroup>
-          <HintText>The slug is the URL-friendly version of the title. It should contain only lowercase letters, numbers, and hyphens.</HintText>
-          
-          {formData.slug && (
-            <ValidationMessage className={
-              slugValidation.isChecking ? 'checking' : 
-              slugValidation.isValid ? 'valid' : 'invalid'
-            }>
-              <ValidationIcon className={
-                slugValidation.isChecking ? 'checking' : 
-                slugValidation.isValid ? 'valid' : 'invalid'
-              }>
-                {slugValidation.isChecking ? '...' : 
-                 slugValidation.isValid ? '✓' : '✗'}
-              </ValidationIcon>
-              {slugValidation.isChecking ? 'Checking slug...' : 
-               slugValidation.message || (slugValidation.isValid ? 'Slug is valid' : '')}
-            </ValidationMessage>
-          )}
-          
-          {errors.slug && <ErrorMessage>{errors.slug}</ErrorMessage>}
+            <SlugValidationMessage $isValid={slugValidation.isValid}>
+              {slugValidation.message}
+            </SlugValidationMessage>
+          </SlugInputGroup>
         </FormGroup>
         
         <FormGroup>
           <Label htmlFor="content">Content</Label>
           <RichTextEditor
-            value={formData.content}
+            value={post.content}
             onChange={handleEditorChange}
+            onImageUpload={handleImageUpload}
           />
-          {errors.content && <ErrorMessage>{errors.content}</ErrorMessage>}
         </FormGroup>
         
         <FormGroup>
@@ -805,20 +807,17 @@ const PostFormPage = () => {
             onChange={handleFeaturedImageChange}
             accept="image/*"
           />
-          {errors.featured_image && <ErrorMessage>{errors.featured_image}</ErrorMessage>}
           
-          {preview.featured_image && (
+          {featuredImagePreview && (
             <ImagePreviewContainer>
               <ImagePreview>
                 <PreviewImage 
-                  src={
-                    typeof preview.featured_image === 'string' 
-                      ? preview.featured_image 
-                      : URL.createObjectURL(preview.featured_image)
-                  } 
+                  src={featuredImagePreview} 
                   alt="Featured preview" 
                 />
-                <RemoveButton onClick={handleRemoveFeaturedImage}>×</RemoveButton>
+                <RemoveButton onClick={handleRemoveFeaturedImage}>
+                  <CloseIcon />
+                </RemoveButton>
               </ImagePreview>
             </ImagePreviewContainer>
           )}
@@ -835,22 +834,20 @@ const PostFormPage = () => {
             multiple
           />
           
-          {preview.additional_images && preview.additional_images.length > 0 && (
+          {additionalImagePreviews && additionalImagePreviews.length > 0 && (
             <AdditionalImagesContainer>
               <Label>Preview</Label>
               <AdditionalImagesGrid>
-                {preview.additional_images.map((image, index) => (
+                {additionalImagePreviews.map((image, index) => (
                   <ImageContainer key={index}>
                     <ImagePreview>
                       <PreviewImage 
-                        src={
-                          typeof image === 'string' 
-                            ? image 
-                            : URL.createObjectURL(image)
-                        } 
-                        alt={`Preview ${index + 1}`} 
+                        src={image} 
+                        alt={`Preview ${index + 1}`}
                       />
-                      <RemoveButton onClick={() => handleRemoveAdditionalImage(index)}>×</RemoveButton>
+                      <RemoveButton onClick={() => handleRemoveAdditionalImage(index)}>
+                        <CloseIcon />
+                      </RemoveButton>
                     </ImagePreview>
                   </ImageContainer>
                 ))}
@@ -860,19 +857,28 @@ const PostFormPage = () => {
         </FormGroup>
         
         <FormGroup>
-          <Checkbox>
-            <Input
-              type="checkbox"
-              id="published"
-              name="published"
-              checked={formData.published}
-              onChange={handleChange}
-            />
-            <Label htmlFor="published" style={{ marginBottom: 0 }}>Publish immediately</Label>
-          </Checkbox>
+          <Label>Publishing Options</Label>
+          <PublishOption>
+            <ToggleSwitch>
+              <input
+                type="checkbox"
+                id="published"
+                name="published"
+                checked={post.published}
+                onChange={handleChange}
+              />
+              <span className="slider"></span>
+            </ToggleSwitch>
+            <Label htmlFor="published" style={{ marginBottom: 0 }}>
+              {post.published ? 'Published' : 'Draft'}
+            </Label>
+          </PublishOption>
+          <div style={{ fontSize: '0.875rem', color: '#6c757d', marginTop: '0.5rem' }}>
+            {post.published 
+              ? 'The post will be visible to all visitors immediately after saving.' 
+              : 'The post will be saved as a draft and won\'t be visible to visitors.'}
+          </div>
         </FormGroup>
-        
-        {errors.form && <ErrorMessage>{errors.form}</ErrorMessage>}
         
         <ButtonContainer>
           <StyledButton 
@@ -880,12 +886,12 @@ const PostFormPage = () => {
             disabled={loading}
             color="primary"
           >
-            {loading ? 'Saving...' : (isEditMode ? 'Update Post' : 'Create Post')}
+            {loading ? 'Saving...' : (isEdit ? 'Update Post' : 'Create Post')}
           </StyledButton>
           
           <StyledButton 
             type="button" 
-            onClick={() => navigate('/posts')}
+            onClick={() => navigate('/admin/posts')}
             color="secondary"
           >
             Cancel
@@ -896,4 +902,4 @@ const PostFormPage = () => {
   );
 };
 
-export default PostFormPage; 
+export default PostFormPage;

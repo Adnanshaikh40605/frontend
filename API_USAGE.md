@@ -4,8 +4,44 @@
 
 The frontend is configured to connect to the backend API in two ways:
 
-1. **Development Mode**: Using Vite's proxy feature to forward requests from `http://localhost:3000/api/*` to `http://localhost:8000/api/*`
+1. **Development Mode**: Using Vite's proxy feature to forward requests from `http://localhost:5173/api/*` to `http://localhost:8000/api/*`
 2. **Production Mode**: Using environment variables to specify the API URL
+
+## API Service Architecture
+
+The API service is organized into four main files:
+
+1. **FRONTEND_API_SERVICE.js** - Main API service with core functionality and utilities
+   ```javascript
+   // Example from FRONTEND_API_SERVICE.js
+   export const mediaAPI = {
+     getImageUrl: (path) => { /* ... */ },
+     getOptimizedImageUrl: (path, { width, height, format } = {}) => { /* ... */ }
+   };
+   ```
+
+2. **apiEndpoints.js** - Contains all API endpoint URLs
+   ```javascript
+   // Example from apiEndpoints.js
+   export const POST_ENDPOINTS = {
+     LIST: `${API_URL}/api/posts/`,
+     DETAIL: (id) => `${API_URL}/api/posts/${id}/`,
+     UPLOAD_IMAGES: (id) => `${API_URL}/api/posts/${id}/upload_images/`,
+   };
+   ```
+
+3. **apiService.js** - Contains API service functions organized by resource type
+   ```javascript
+   // Example from apiService.js
+   const postAPI = {
+     getAll: async (params = {}) => { /* ... */ },
+     getById: async (id) => { /* ... */ },
+     create: async (postData) => { /* ... */ },
+     // ...
+   };
+   ```
+
+4. **apiMocks.js** - Contains mock data for development fallback
 
 ## Local Development
 
@@ -15,6 +51,113 @@ When running locally:
 2. Start the frontend dev server: `cd frontend && npm run dev`
 3. The frontend will access APIs via relative URLs like `/api/posts/`
 4. Vite's proxy configuration will automatically forward these requests to your Django backend
+
+## Using the API Services
+
+```jsx
+import { useEffect, useState } from 'react';
+import { postAPI, mediaAPI } from '../api/apiService';
+
+function PostList() {
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchPosts() {
+      try {
+        const data = await postAPI.getAll({ published: true });
+        setPosts(data);
+      } catch (error) {
+        console.error('Failed to fetch posts:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchPosts();
+  }, []);
+
+  // Example of using mediaAPI to get image URLs
+  const getImageUrl = (path) => {
+    return mediaAPI.getImageUrl(path);
+  };
+
+  if (loading) return <div>Loading...</div>;
+
+  return (
+    <div>
+      <h1>Posts</h1>
+      {posts.map(post => (
+        <div key={post.id}>
+          <h2>{post.title}</h2>
+          {post.featured_image && (
+            <img 
+              src={getImageUrl(post.featured_image)} 
+              alt={post.title} 
+              style={{ maxWidth: '100%' }} 
+            />
+          )}
+          <p>{post.excerpt}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+## Environment Variables
+
+For production or custom setups, you can set these environment variables:
+
+- `VITE_API_URL`: Base URL for API calls (e.g., `https://api.example.com`)
+- `VITE_MEDIA_URL`: Base URL for media files (e.g., `https://api.example.com/media/`)
+
+## Error Handling
+
+The API service includes built-in error handling:
+
+```jsx
+import { useState } from 'react';
+import { commentAPI } from '../api/apiService';
+
+function CommentForm({ postId }) {
+  const [comment, setComment] = useState('');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(false);
+    
+    try {
+      await commentAPI.create({
+        post: postId,
+        content: comment,
+        name,
+        email
+      });
+      
+      setSuccess(true);
+      setComment('');
+      setName('');
+      setEmail('');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {error && <div className="error">{error}</div>}
+      {success && <div className="success">Comment submitted for approval!</div>}
+      {/* Form fields */}
+    </form>
+  );
+}
+```
 
 ## Available API Endpoints
 
@@ -59,50 +202,4 @@ When running locally:
 - **Bulk reject comments**: `POST /api/comments/bulk_reject/`
 - **Get all comments for a post**: `GET /api/comments/all/?post={post_id}`
 
-## Environment Variables
-
-For production or custom setups, you can set these environment variables:
-
-- `VITE_API_URL`: Base URL for API calls (e.g., `https://api.example.com`)
-- `VITE_MEDIA_URL`: Base URL for media files (e.g., `https://api.example.com/media/`)
-
-## Example Usage in Components
-
-```jsx
-import { useEffect, useState } from 'react';
-import { postAPI } from '../api/apiService';
-
-function PostList() {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchPosts() {
-      try {
-        const data = await postAPI.getAll({ published: true });
-        setPosts(data);
-      } catch (error) {
-        console.error('Failed to fetch posts:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchPosts();
-  }, []);
-
-  if (loading) return <div>Loading...</div>;
-
-  return (
-    <div>
-      <h1>Posts</h1>
-      {posts.map(post => (
-        <div key={post.id}>
-          <h2>{post.title}</h2>
-          <p>{post.excerpt}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
 ``` 

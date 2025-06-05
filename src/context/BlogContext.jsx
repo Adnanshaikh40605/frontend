@@ -1,17 +1,8 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { postAPI, mediaAPI } from '../api/apiService';
+import { createContext, useState, useCallback } from 'react';
+import { postAPI, mediaAPI } from '../api';
 
 // Create context
 const BlogContext = createContext();
-
-// Custom hook to use the blog context
-export const useBlog = () => {
-  const context = useContext(BlogContext);
-  if (!context) {
-    throw new Error('useBlog must be used within a BlogProvider');
-  }
-  return context;
-};
 
 // Provider component
 export const BlogProvider = ({ children }) => {
@@ -56,7 +47,7 @@ export const BlogProvider = ({ children }) => {
   }, []);
   
   // Fetch all posts with pagination
-  const fetchPosts = useCallback(async (filter = 'published', page = 1, pageSize = 10, append = false) => {
+  const fetchPosts = useCallback(async (page = 1, pageSize = 10, append = false) => {
     try {
       setLoading(true);
       setError(null);
@@ -111,9 +102,9 @@ export const BlogProvider = ({ children }) => {
   }, []);
 
   // Load more posts (for infinite scroll)
-  const loadMorePosts = useCallback(async (filter = 'published') => {
+  const loadMorePosts = useCallback(async () => {
     if (pagination.hasMore && !loading) {
-      return fetchPosts(filter, pagination.currentPage + 1, 10, true);
+      return fetchPosts(pagination.currentPage + 1, 10, true);
     }
     return [];
   }, [fetchPosts, pagination.hasMore, pagination.currentPage, loading]);
@@ -284,6 +275,7 @@ export const BlogProvider = ({ children }) => {
     return mediaAPI.getImageUrl(imagePath);
   };
   
+  // Provide the context value
   const contextValue = {
     posts,
     currentPost,
@@ -300,9 +292,10 @@ export const BlogProvider = ({ children }) => {
     togglePublishStatus,
     previewPost,
     checkBrokenLinks,
-    getImageUrl
+    getImageUrl,
+    incrementPostView
   };
-
+  
   return (
     <BlogContext.Provider value={contextValue}>
       {children}
@@ -310,4 +303,8 @@ export const BlogProvider = ({ children }) => {
   );
 };
 
+// Custom hook to use the blog context - moved to a separate file
+export { useBlog } from './hooks/useBlog';
+
+// Export the context
 export default BlogContext; 

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import Comment from '../components/Comment';
-import { commentAPI, API_URL } from '../api/apiService';
+import { commentAPI } from '../api/apiService';
 
 const Container = styled.div`
   width: 100%;
@@ -208,36 +208,45 @@ const CommentsPage = () => {
   const [bulkAction, setBulkAction] = useState('');
   
   // Pagination
-  const [page, setPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [resultsPerPage, setResultsPerPage] = useState(10);
+  const [resultsPerPage] = useState(10);
   
   // For development: debug info
   const isDevelopment = import.meta.env.DEV;
   const [showDebug, setShowDebug] = useState(false);
   const [debug, setDebug] = useState({});
   
-  // Fetch comment counts
-  useEffect(() => {
-    const fetchCounts = async () => {
-      try {
-        const response = await fetch(`${API_URL}/api/comments/counts/`);
-        if (response.ok) {
-          const data = await response.json();
-          setCounts({
-            all: data.all || 0,
-            pending: data.pending || 0,
-            approved: data.approved || 0,
-            trash: data.trash || 0
-          });
-        }
-      } catch (err) {
-        console.error('Error fetching comment counts:', err);
-      }
-    };
-    
-    fetchCounts();
+  // Define fetchCounts function
+  const fetchCounts = useCallback(async () => {
+    try {
+      console.log('Fetching comment counts');
+      const data = await commentAPI.getCounts();
+      setCounts({
+        all: data.all || 0,
+        pending: data.pending || 0,
+        approved: data.approved || 0,
+        trash: data.trash || 0
+      });
+    } catch (err) {
+      console.error('Error fetching comment counts:', err);
+    }
   }, []);
+  
+  // Debounced fetchCounts to avoid multiple API calls
+  const debouncedFetchCounts = useCallback(() => {
+    if (window.fetchCountsTimeout) {
+      clearTimeout(window.fetchCountsTimeout);
+    }
+    window.fetchCountsTimeout = setTimeout(() => {
+      fetchCounts();
+    }, 300);
+  }, [fetchCounts]);
+  
+  // Fetch comment counts only once on component mount
+  useEffect(() => {
+    fetchCounts();
+  }, [fetchCounts]);
   
   // Fetch comments based on active tab
   useEffect(() => {
@@ -250,26 +259,28 @@ const CommentsPage = () => {
         
         console.log('CommentsPage - Fetching comments for tab:', activeTab);
         
-        let url = `${API_URL}/api/comments/?page=${page}&limit=${resultsPerPage}`;
+        // Prepare query parameters
+        const params = {
+          page: currentPage,
+          limit: resultsPerPage
+        };
         
         // Add filter based on active tab
         if (activeTab === TABS.PENDING) {
-          url += '&approved=false&is_trash=false';
+          params.approved = false;
+          params.is_trash = false;
         } else if (activeTab === TABS.APPROVED) {
-          url += '&approved=true&is_trash=false';
+          params.approved = true;
+          params.is_trash = false;
         } else if (activeTab === TABS.TRASH) {
-          url += '&is_trash=true';
+          params.is_trash = true;
         } else {
           // ALL tab, exclude trash
-          url += '&is_trash=false';
+          params.is_trash = false;
         }
         
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-        }
-        
-        const responseData = await response.json();
+        // Use the API service to fetch comments
+        const responseData = await commentAPI.getFilteredComments(params);
         console.log('CommentsPage - Comments response:', responseData);
         setDebug(responseData);
         
@@ -287,9 +298,6 @@ const CommentsPage = () => {
         } else {
           setComments([]);
         }
-        
-        // Refresh counts after fetch
-        fetchCounts();
       } catch (err) {
         console.error('Error fetching comments:', err);
         setError('Failed to load comments. Please try again later.');
@@ -300,36 +308,12 @@ const CommentsPage = () => {
     };
     
     fetchComments();
-  }, [activeTab, page, resultsPerPage]);
-  
-  // Function to refetch comments after an action
-  const refetchComments = () => {
-    // Reset to page 1 and refetch
-    setPage(1);
-    // The useEffect will handle the fetching
-  };
-  
-  const fetchCounts = async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/comments/counts/`);
-      if (response.ok) {
-        const data = await response.json();
-        setCounts({
-          all: data.all || 0,
-          pending: data.pending || 0,
-          approved: data.approved || 0,
-          trash: data.trash || 0
-        });
-      }
-    } catch (err) {
-      console.error('Error fetching comment counts:', err);
-    }
-  };
+  }, [activeTab, currentPage, resultsPerPage]);
   
   // Handle tab change
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    setPage(1); // Reset pagination when changing tabs
+    setCurrentPage(1); // Reset pagination when changing tabs
   };
   
   // Handle approve comment
@@ -347,8 +331,8 @@ const CommentsPage = () => {
         ));
       }
       
-      // Refresh counts
-      fetchCounts();
+      // Use debounced fetch counts
+      debouncedFetchCounts();
     } catch (err) {
       console.error('Error approving comment:', err);
       alert('Failed to approve comment. Please try again.');
@@ -371,8 +355,8 @@ const CommentsPage = () => {
         // Nothing needed here since it stays pending
       }
       
-      // Refresh counts
-      fetchCounts();
+      // Use debounced fetch counts
+      debouncedFetchCounts();
     } catch (err) {
       console.error('Error unapproving comment:', err);
       alert('Failed to unapprove comment. Please try again.');
@@ -387,8 +371,8 @@ const CommentsPage = () => {
       // Remove from current view since it's now in trash
       setComments(comments.filter(comment => comment.id !== commentId));
       
-      // Refresh counts
-      fetchCounts();
+      // Use debounced fetch counts
+      debouncedFetchCounts();
     } catch (err) {
       console.error('Error trashing comment:', err);
       alert('Failed to trash comment. Please try again.');
@@ -405,8 +389,8 @@ const CommentsPage = () => {
         setComments(comments.filter(comment => comment.id !== commentId));
       }
       
-      // Refresh counts
-      fetchCounts();
+      // Use debounced fetch counts
+      debouncedFetchCounts();
     } catch (err) {
       console.error('Error restoring comment:', err);
       alert('Failed to restore comment. Please try again.');
@@ -422,8 +406,8 @@ const CommentsPage = () => {
         // Remove from any view
         setComments(comments.filter(comment => comment.id !== commentId));
         
-        // Refresh counts
-        fetchCounts();
+        // Use debounced fetch counts
+        debouncedFetchCounts();
       }
     } catch (err) {
       console.error('Error deleting comment:', err);
@@ -561,8 +545,8 @@ const CommentsPage = () => {
       setSelectAll(false);
       setBulkAction('');
       
-      // Refresh counts
-      fetchCounts();
+      // Use debounced fetch counts
+      debouncedFetchCounts();
       
     } catch (err) {
       console.error('Error applying bulk action:', err);
@@ -697,16 +681,16 @@ const CommentsPage = () => {
       {totalPages > 1 && (
         <PaginationContainer>
           <PageButton 
-            onClick={() => setPage(1)} 
-            disabled={page === 1}
-            $disabled={page === 1}
+            onClick={() => setCurrentPage(1)} 
+            disabled={currentPage === 1}
+            $disabled={currentPage === 1}
           >
             &laquo; First
           </PageButton>
           <PageButton 
-            onClick={() => setPage(page => Math.max(1, page - 1))} 
-            disabled={page === 1}
-            $disabled={page === 1}
+            onClick={() => setCurrentPage(currentPage => Math.max(1, currentPage - 1))} 
+            disabled={currentPage === 1}
+            $disabled={currentPage === 1}
           >
             &lsaquo; Prev
           </PageButton>
@@ -718,20 +702,20 @@ const CommentsPage = () => {
             if (
               pageNum === 1 || 
               pageNum === totalPages || 
-              (pageNum >= page - 1 && pageNum <= page + 1)
+              (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
             ) {
               return (
                 <PageButton 
                   key={pageNum} 
-                  onClick={() => setPage(pageNum)} 
-                  $active={page === pageNum}
+                  onClick={() => setCurrentPage(pageNum)} 
+                  $active={currentPage === pageNum}
                 >
                   {pageNum}
                 </PageButton>
               );
             } else if (
-              (pageNum === 2 && page > 3) || 
-              (pageNum === totalPages - 1 && page < totalPages - 2)
+              (pageNum === 2 && currentPage > 3) || 
+              (pageNum === totalPages - 1 && currentPage < totalPages - 2)
             ) {
               // Show ellipsis
               return <span key={pageNum}>...</span>;
@@ -741,16 +725,16 @@ const CommentsPage = () => {
           })}
           
           <PageButton 
-            onClick={() => setPage(page => Math.min(totalPages, page + 1))} 
-            disabled={page === totalPages}
-            $disabled={page === totalPages}
+            onClick={() => setCurrentPage(currentPage => Math.min(totalPages, currentPage + 1))} 
+            disabled={currentPage === totalPages}
+            $disabled={currentPage === totalPages}
           >
             Next &rsaquo;
           </PageButton>
           <PageButton 
-            onClick={() => setPage(totalPages)} 
-            disabled={page === totalPages}
-            $disabled={page === totalPages}
+            onClick={() => setCurrentPage(totalPages)} 
+            disabled={currentPage === totalPages}
+            $disabled={currentPage === totalPages}
           >
             Last &raquo;
           </PageButton>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { useBlog } from '../context/BlogContext';
@@ -10,8 +10,23 @@ import { generateTableOfContents, renderTocHtml, makeHeadingsClickable } from '.
 import BlogHeader from '../components/BlogHeader';
 import BlogFooter from '../components/BlogFooter';
 import placeholderImage from '../assets/placeholder-image.js';
-import { postAPI, mediaAPI } from '../api/apiService';
+import { postAPI, mediaAPI } from '../api';
 import usePostComments from '../hooks/usePostComments';
+
+// Cache for blog posts to avoid refetching
+const postCache = new Map();
+
+// Function to clear cache for a specific slug
+export const clearPostCache = (slug) => {
+  if (slug) {
+    postCache.delete(slug);
+  }
+};
+
+// Function to clear the entire post cache
+export const clearAllPostCache = () => {
+  postCache.clear();
+};
 
 const PageContainer = styled.div`
   font-family: 'Lexend', sans-serif;
@@ -474,9 +489,6 @@ const Spinner = styled.div`
   }
 `;
 
-// Global post cache to store loaded posts
-const postCache = new Map();
-
 const CommentsSection = styled.div`
   margin-top: 3rem;
   border-top: 1px solid #eaeaea;
@@ -565,193 +577,193 @@ const TableOfContents = styled.div`
 const BlogPostPage = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { state } = location;
   const contentRef = useRef(null);
-  const initialLoad = useRef(true);
-  const isMounted = useRef(true);
-  
-  // Local state
+  const tocRef = useRef(null);
   const [post, setPost] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [relatedPosts, setRelatedPosts] = useState([]);
-  const [showCommentForm, setShowCommentForm] = useState(true);
-  const [pageLoading, setPageLoading] = useState(true);
-  const [errorState, setError] = useState(null);
-  const [tableOfContents, setTableOfContents] = useState('');
-  const [hasHeadings, setHasHeadings] = useState(false);
+  const [showToc, setShowToc] = useState(false);
+  const [tocItems, setTocItems] = useState([]);
+  const { blogSettings } = useBlog();
+  const { comments, loading: commentsLoading, fetchComments, submitComment } = usePostComments(post?.id, false);
   
-  // Use the custom comments hook - note: still needs post ID for comments
-  const {
-    comments,
-    loading: commentsLoading,
-    error: commentsError,
-    hasMore: hasMoreComments,
-    commentSubmitted,
-    submittingComment,
-    loadMore: loadMoreComments,
-    submitComment
-  } = usePostComments(post?.id); // Change to post?.id to handle loading sequence
+  // Debug loading state
+  useEffect(() => {
+    console.log(`Loading state changed: ${loading}`);
+  }, [loading]);
   
-  // Context
-  const { blogError } = useBlog();
-
-  // Scroll to top when navigating to a new post
-  useLayoutEffect(() => {
-    window.scrollTo(0, 0);
-  }, [slug, pathname]);
-
-  // Generate table of contents when post content changes
-  useEffect(() => {
-    if (post?.content) {
-      generateTableOfContentsFromContent(post.content);
-    }
-  }, [post?.content]);
-
-  // Make headings clickable after content is rendered
-  useEffect(() => {
-    if (contentRef.current && post?.content) {
-      makeHeadingsClickable(contentRef.current);
-    }
-  }, [post?.content]);
-
-  // Function to generate TOC from post content
+  // Generate table of contents from content
   const generateTableOfContentsFromContent = (content) => {
+    if (!content) return [];
+    
     try {
-      // Generate TOC objects from sanitized content
-      const tocItems = generateTableOfContents(sanitizeBlogContent(content));
+      // Create a temporary div to parse the HTML content
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = content;
       
-      // Check if we have headings
-      if (tocItems.length > 0) {
-        // Render the TOC as HTML with a special class for end-of-article placement
-        const tocHtml = renderTocHtml(tocItems, {
-          listType: 'ol',
-          maxDepth: 3,
-          title: 'Article Navigation',
-          className: 'end-of-article-toc'
-        });
-        
-        setTableOfContents(tocHtml);
-        setHasHeadings(true);
-      } else {
-        setTableOfContents('');
-        setHasHeadings(false);
+      // Find all headings (h1, h2, h3, h4, h5, h6)
+      const headings = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
+      
+      // If no headings, don't show TOC
+      if (headings.length < 3) {
+        setShowToc(false);
+        return [];
       }
+      
+      // Generate TOC items
+      const items = Array.from(headings).map((heading, index) => {
+        // Add ID to heading if it doesn't have one
+        if (!heading.id) {
+          heading.id = `heading-${index}`;
+        }
+        
+        return {
+          id: heading.id,
+          text: heading.textContent,
+          level: parseInt(heading.tagName.substring(1)),
+        };
+      });
+      
+      // Show TOC if we have enough items
+      setShowToc(items.length >= 3);
+      
+      return items;
     } catch (error) {
       console.error('Error generating table of contents:', error);
-      setTableOfContents('');
-      setHasHeadings(false);
+      setShowToc(false);
+      return [];
     }
   };
-
+  
+  // Load post data
   useEffect(() => {
-    isMounted.current = true;
-    
-    // If we have cached data, show it immediately
-    if (postCache.has(slug)) {
-      setPost(postCache.get(slug));
-      if (initialLoad.current) {
-        setPageLoading(false);
-        initialLoad.current = false;
-      } else {
-        // Still show briefly that we're loading new content
-        setPageLoading(true);
-        
-        // Hide loading after a small delay
-        const timer = setTimeout(() => {
-          if (isMounted.current) {
-            setPageLoading(false);
-          }
-        }, 300);
-        
-        return () => {
-          clearTimeout(timer);
-        };
-      }
-    } else {
-      // Show loading indicators for uncached content
-      setPageLoading(true);
-    }
-  }, [slug]);
-
-  useEffect(() => {
-    isMounted.current = true;
+    let isMounted = true;
     
     const loadPost = async () => {
       try {
-        if (!isMounted.current) return;
+        console.log(`Starting to load post with slug: ${slug}`);
+        setLoading(true);
+        setError(null);
         
-        // Fetch the post data by slug instead of ID
-        let postData;
-        try {
-          // Use getBySlug method if API supports it, otherwise fall back to id
-          postData = await postAPI.getBySlug(slug);
-        } catch (err) {
-          console.error('Error fetching post data:', err);
-          if (isMounted.current) {
-            setError('Failed to load post');
-            setPageLoading(false);
-          }
-          return;
+        // Check if we should force refresh from location state
+        const forceRefresh = location.state?.forceRefresh === true;
+        if (forceRefresh) {
+          console.log('Force refresh requested, clearing cache for this post');
+          postCache.delete(slug);
+          // Reset the state to avoid future forced refreshes
+          window.history.replaceState({}, document.title);
         }
         
-        if (!isMounted.current) return;
+        // Check if we have the post in cache
+        const cachedPost = postCache.get(slug);
         
-        // Update state with post data
-        setPost(postData);
-        
-        // Store in cache for future use
-        postCache.set(slug, postData);
-        
-        // Fetch related posts
-        const related = await getRelatedPosts(postData);
-        if (isMounted.current) {
-          setRelatedPosts(related);
-        }
-        
-        // Track view
-        trackPostView(postData.id);
-        
-        // Add a small delay before removing loading state for smoother transition
-        setTimeout(() => {
-          if (isMounted.current) {
-            setPageLoading(false);
+        if (cachedPost && !forceRefresh) {
+          console.log(`Found cached post: ${cachedPost.title}`);
+          setPost(cachedPost);
+          setTocItems(generateTableOfContentsFromContent(cachedPost.content));
+          if (isMounted) {
+            await fetchComments(cachedPost.id);
+            getRelatedPosts(cachedPost);
+            trackPostView(cachedPost.id);
+            console.log('Setting loading to false (cached post)');
+            setLoading(false);
           }
-        }, 300);
-      } catch (err) {
-        console.error('Error loading post:', err);
-        if (isMounted.current) {
-          setPageLoading(false);
+        } else {
+          // Fetch post data
+          console.log(`Fetching post with slug: ${slug}${forceRefresh ? ' (forced refresh)' : ''}`);
+          try {
+            const postData = await postAPI.getBySlug(slug);
+            console.log('Post data received:', postData);
+            
+            if (!isMounted) {
+              console.log('Component unmounted, aborting update');
+              return;
+            }
+            
+            if (postData) {
+              // Cache the post
+              postCache.set(slug, postData);
+              setPost(postData);
+              setTocItems(generateTableOfContentsFromContent(postData.content));
+              
+              if (isMounted) {
+                await fetchComments(postData.id);
+                getRelatedPosts(postData);
+                trackPostView(postData.id);
+              }
+            } else {
+              console.log('Post data not found');
+              if (isMounted) {
+                setError('Post not found');
+                navigate('/blog', { replace: true });
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching post:', error);
+            if (isMounted) {
+              setError('Post not found');
+              navigate('/blog', { replace: true });
+            }
+          }
+          
+          if (isMounted) {
+            console.log('Setting loading to false (fetched post)');
+            setLoading(false);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading post:', error);
+        if (isMounted) {
+          setError('Failed to load post');
+          console.log('Setting loading to false (error case)');
+          setLoading(false);
         }
       }
     };
     
     loadPost();
     
+    // Cleanup function to prevent state updates after unmount
     return () => {
-      isMounted.current = false;
+      console.log('Effect cleanup - component unmounting');
+      isMounted = false;
     };
-  }, [slug]);
+  }, [slug, navigate, fetchComments, location.state]);
 
   // Placeholder for related posts function
   const getRelatedPosts = async (currentPost) => {
-    // In a real implementation, you'd fetch related posts based on tags, category, etc.
-    // For now, we'll return empty array or mock data
-    if (currentPost && currentPost.id) {
-      // This is just a placeholder - you would implement real logic here
-      console.log(`Finding related posts for: ${currentPost.title}`);
+    try {
+      // In a real implementation, you'd fetch related posts based on tags, category, etc.
+      // For now, we'll return empty array or mock data
+      if (currentPost && currentPost.id) {
+        // This is just a placeholder - you would implement real logic here
+        console.log(`Finding related posts for: ${currentPost.title}`);
+      }
+      return []; 
+    } catch (error) {
+      console.error('Error getting related posts:', error);
+      return [];
     }
-    return []; 
   };
   
   // Placeholder for tracking views
   const trackPostView = async (postId) => {
-    // Implement view tracking logic
-    if (postId) {
-      // This is just a placeholder - you would implement real tracking here
-      console.log(`Tracking view for post ID: ${postId}`);
+    try {
+      // Implement view tracking logic
+      if (postId) {
+        // This is just a placeholder - you would implement real tracking here
+        console.log(`Tracking view for post ID: ${postId}`);
+      }
+    } catch (error) {
+      console.error('Error tracking post view:', error);
     }
   };
 
-  const handleKeyDown = (e) => {
+  // Wrap handleKeyDown in useCallback
+  const handleKeyDown = useCallback((e) => {
     // Navigation keyboard shortcuts
     if (e.altKey) {
       switch(e.key) {
@@ -762,27 +774,15 @@ const BlogPostPage = () => {
           break;
       }
     }
-  };
+  }, [navigate]);
 
+  // Now use it in useEffect
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
-
-  const handleCommentSubmit = async (commentData) => {
-    try {
-      setPageLoading(true);
-      await submitComment(commentData);
-      setShowCommentForm(false);
-    } catch (err) {
-      console.error('Error submitting comment:', err);
-      setError('Failed to submit comment. Please try again later.');
-    } finally {
-      setPageLoading(false);
-    }
-  };
+  }, [handleKeyDown]);
 
   // Add back the share functions that were previously removed
   const shareOnTwitter = () => {
@@ -808,11 +808,11 @@ const BlogPostPage = () => {
   };
 
   const renderContent = () => {
-    if (pageLoading && !post) {
+    if (loading && !post) {
       return <Message>Loading post...</Message>;
     }
 
-    if (errorState || blogError || !post) {
+    if (error || !post) {
       return (
         <>
           <Message>Failed to load this post. Please try again later.</Message>
@@ -838,10 +838,11 @@ const BlogPostPage = () => {
         {post.featured_image && (
           <FeaturedImageContainer>
             <FeaturedImage 
-              src={mediaAPI.getImageUrl(post.featured_image)} 
+              src={post.featured_image_url || post.featured_image} 
               alt={post.title}
               loading="lazy"
               onError={(e) => {
+                console.error('Image failed to load:', e.target.src);
                 e.target.src = placeholderImage;
               }}
             />
@@ -855,10 +856,15 @@ const BlogPostPage = () => {
         />
         
         {/* Display Table of Contents if there are headings */}
-        {hasHeadings && (
+        {showToc && (
           <div className="article-navigation-section">
             <TableOfContents 
-              dangerouslySetInnerHTML={{ __html: tableOfContents }} 
+              dangerouslySetInnerHTML={{ __html: renderTocHtml(tocItems, {
+                listType: 'ol',
+                maxDepth: 3,
+                title: 'Article Navigation',
+                className: 'end-of-article-toc'
+              }) }} 
             />
             <p className="toc-description">Use this navigation to revisit sections of the article or quickly jump to topics of interest.</p>
           </div>
@@ -899,7 +905,7 @@ const BlogPostPage = () => {
                   )}
                   <RelatedPostContent>
                     <RelatedPostTitle>
-                      <Link to={`/blog/${relatedPost.id}`}>{relatedPost.title}</Link>
+                      <Link to={`/blog/${relatedPost.slug}`}>{relatedPost.title}</Link>
                     </RelatedPostTitle>
                     <RelatedPostMeta>
                       {formatDate(relatedPost.created_at)} • {relatedPost.read_time || '5 min read'}
@@ -917,22 +923,11 @@ const BlogPostPage = () => {
           
           <CommentForm 
             postId={post?.id}
-            onCommentSubmitted={handleCommentSubmit} 
-            showCommentForm={showCommentForm}
-            setShowCommentForm={setShowCommentForm}
-            isSubmitting={submittingComment}
+            onCommentSubmitted={submitComment} 
           />
-          
-          {commentSubmitted && (
-            <Message>
-              Thank you for your comment! It will be visible after approval.
-            </Message>
-          )}
           
           {commentsLoading && comments.length === 0 ? (
             <Message>Loading comments...</Message>
-          ) : commentsError ? (
-            <Message>{commentsError}</Message>
           ) : comments.length > 0 ? (
             <CommentsList>
               {comments.map(comment => (
@@ -942,15 +937,6 @@ const BlogPostPage = () => {
                   showActionButtons={false}
                 />
               ))}
-              
-              {hasMoreComments && (
-                <LoadMoreButton 
-                  onClick={loadMoreComments} 
-                  disabled={commentsLoading}
-                >
-                  {commentsLoading ? 'Loading more comments...' : 'Load more comments'}
-                </LoadMoreButton>
-              )}
             </CommentsList>
           ) : (
             <Message>No comments yet. Be the first to comment!</Message>
@@ -962,7 +948,7 @@ const BlogPostPage = () => {
 
   return (
     <PageContainer>
-      <LoadingOverlay $isVisible={pageLoading}>
+      <LoadingOverlay $isVisible={loading}>
         <Spinner />
       </LoadingOverlay>
       <BlogHeader activePage="blog" />

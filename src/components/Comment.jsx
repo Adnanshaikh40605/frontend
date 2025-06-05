@@ -179,7 +179,9 @@ const Comment = ({
     <CommentContainer $approved={currentComment.approved} $isTrash={isTrash}>
       {showPostInfo && currentComment.post && (
         <PostInfo>
-          On post: <PostTitle href={`/posts/${currentComment.post.id}`}>{currentComment.post.title || `Post #${currentComment.post.id}`}</PostTitle>
+          On post: <PostTitle href={`/posts/${currentComment.post_title?.slug || currentComment.post?.slug || currentComment.post?.id || ''}`}>
+            {currentComment.post_title?.title || currentComment.post?.title || (currentComment.post?.id ? `Post #${currentComment.post.id}` : 'Unknown Post')}
+          </PostTitle>
         </PostInfo>
       )}
       

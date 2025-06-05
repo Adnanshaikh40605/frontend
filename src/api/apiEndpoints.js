@@ -1,42 +1,27 @@
-/**
- * API Endpoints for the Blog CMS
- * This file centralizes all API endpoint URLs to ensure consistency
- */
+// apiEndpoints.js - Contains all API endpoint URLs
 
-// Base API URL for proxying in development or direct access in production
-const API_URL = import.meta.env.VITE_API_BASE_URL || '';
+// Get environment variables with fallback to development values
+const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const DEFAULT_API_URL = isDevelopment ? 'http://localhost:8000' : 'https://web-production-f03ff.up.railway.app';
+export const API_URL = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL !== 'undefined') 
+  ? import.meta.env.VITE_API_URL 
+  : DEFAULT_API_URL;
+  
+export const MEDIA_URL = (import.meta.env.VITE_MEDIA_URL && import.meta.env.VITE_MEDIA_URL !== 'undefined') 
+  ? import.meta.env.VITE_MEDIA_URL 
+  : `${API_URL}/media/`;
 
-// Post Endpoints
-export const POST_ENDPOINTS = {
-  LIST: `${API_URL}/api/posts/`,
-  DETAIL: (id) => `${API_URL}/api/posts/${id}/`,
-  UPLOAD_IMAGES: (id) => `${API_URL}/api/posts/${id}/upload_images/`,
-};
-
-// Image Endpoints
-export const IMAGE_ENDPOINTS = {
-  LIST: `${API_URL}/api/images/`,
-  DETAIL: (id) => `${API_URL}/api/images/${id}/`,
-};
-
-// Comment Endpoints
-export const COMMENT_ENDPOINTS = {
-  LIST: `${API_URL}/api/comments/`,
-  DETAIL: (id) => `${API_URL}/api/comments/${id}/`,
+// API Endpoints
+export const ENDPOINTS = {
+  POSTS: `${API_URL}/api/posts/`,
+  COMMENTS: `${API_URL}/api/comments/`,
+  IMAGES: `${API_URL}/api/images/`,
+  CKEDITOR_UPLOAD: `${API_URL}/ckeditor5/image_upload/`,
+  COMMENT_COUNTS: `${API_URL}/api/comments/counts/`,
   PENDING_COUNT: `${API_URL}/api/comments/pending-count/`,
   BULK_APPROVE: `${API_URL}/api/comments/bulk_approve/`,
   BULK_REJECT: `${API_URL}/api/comments/bulk_reject/`,
-  APPROVE: (id) => `${API_URL}/api/comments/${id}/approve/`,
-  REJECT: (id) => `${API_URL}/api/comments/${id}/reject/`,
-  ALL_FOR_POST: `${API_URL}/api/comments/all/`,
+  TOKEN_REFRESH: `${API_URL}/api/token/refresh/`
 };
 
-// Media Endpoints
-export const MEDIA_URL = import.meta.env.VITE_MEDIA_URL || '/media/';
-
-export default {
-  POST_ENDPOINTS,
-  IMAGE_ENDPOINTS,
-  COMMENT_ENDPOINTS,
-  MEDIA_URL,
-}; 
+export default ENDPOINTS; 
