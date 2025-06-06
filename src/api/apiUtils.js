@@ -2,6 +2,10 @@
 
 import { getAuthToken, isAuthenticated, isTokenExpired, parseJwt } from '../utils/authUtils';
 import { ENDPOINTS } from './apiEndpoints';
+import axios from 'axios';
+
+// Configure axios defaults for CORS
+axios.defaults.withCredentials = true;
 
 // Get CSRF token from cookies
 export const getCookie = (name) => {
@@ -25,6 +29,7 @@ export const refreshAuthToken = async () => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ refresh: refreshToken }),
+      credentials: 'include'
     });
 
     if (!response.ok) {

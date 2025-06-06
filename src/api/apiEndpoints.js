@@ -21,7 +21,10 @@ export const ENDPOINTS = {
   PENDING_COUNT: `${API_URL}/api/comments/pending-count/`,
   BULK_APPROVE: `${API_URL}/api/comments/bulk_approve/`,
   BULK_REJECT: `${API_URL}/api/comments/bulk_reject/`,
-  TOKEN_REFRESH: `${API_URL}/api/token/refresh/`
+  TOKEN: `${API_URL}/api/token/`,
+  TOKEN_REFRESH: `${API_URL}/api/token/refresh/`,
+  TOKEN_VERIFY: `${API_URL}/api/token/verify/`,
+  PROFILE: `${API_URL}/api/profile/`
 };
 
 export default ENDPOINTS; 

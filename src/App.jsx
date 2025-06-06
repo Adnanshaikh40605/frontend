@@ -26,6 +26,9 @@ import BlogPage from './pages/BlogPage';
 import BlogPostPage from './pages/BlogPostPage';
 import LoginPage from './pages/LoginPage';
 
+// Import API test utility (will be available in window.testApi)
+import './utils/apiTest';
+
 // Global styles
 const GlobalStyle = createGlobalStyle`
   :root {

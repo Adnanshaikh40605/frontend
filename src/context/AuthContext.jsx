@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { API_URL, ENDPOINTS } from '../api/apiEndpoints';
 
 // Create the context
 const AuthContext = createContext();
@@ -27,7 +28,7 @@ export const AuthProvider = ({ children }) => {
           axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
           
           // Fetch user profile
-          const response = await axios.get('/api/profile/');
+          const response = await axios.get(ENDPOINTS.PROFILE);
           setCurrentUser(response.data);
         } catch (err) {
           console.error('Auth check failed:', err);
@@ -52,7 +53,7 @@ export const AuthProvider = ({ children }) => {
     }
     
     try {
-      const response = await axios.post('/api/token/refresh/', {
+      const response = await axios.post(ENDPOINTS.TOKEN_REFRESH, {
         refresh: refreshToken
       });
       
@@ -63,7 +64,7 @@ export const AuthProvider = ({ children }) => {
       axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
       
       // Fetch user profile
-      const userResponse = await axios.get('/api/profile/');
+      const userResponse = await axios.get(ENDPOINTS.PROFILE);
       setCurrentUser(userResponse.data);
       
       return true;
@@ -79,7 +80,7 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     
     try {
-      const response = await axios.post('/api/token/', {
+      const response = await axios.post(ENDPOINTS.TOKEN, {
         username,
         password
       });
@@ -92,7 +93,7 @@ export const AuthProvider = ({ children }) => {
       axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
       
       // Fetch user profile
-      const userResponse = await axios.get('/api/profile/');
+      const userResponse = await axios.get(ENDPOINTS.PROFILE);
       setCurrentUser(userResponse.data);
       
       return true;
@@ -108,7 +109,7 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     
     try {
-      await axios.post('/api/register/', userData);
+      await axios.post(`${API_URL}/api/register/`, userData);
       return true;
     } catch (err) {
       console.error('Registration failed:', err);
