@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Connection Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #0066cc;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      background-color: #f9f9f9;
+    }
+    button {
+      background-color: #0066cc;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+    button:hover {
+      background-color: #004c99;
+    }
+    pre {
+      background-color: #f1f1f1;
+      padding: 12px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    .error {
+      color: #dc3545;
+    }
+    .success {
+      color: #28a745;
+    }
+  </style>
+</head>
+<body>
+  <h1>API Connection Test</h1>
+  
+  <div class="card">
+    <h2>Backend URL</h2>
+    <p id="backend-url">Loading...</p>
+    <button onclick="checkBackendStatus()">Check Backend Status</button>
+    <div id="backend-status"></div>
+  </div>
+  
+  <div class="card">
+    <h2>API Endpoints Test</h2>
+    <button onclick="testEndpoint('/')">Test Root Endpoint</button>
+    <button onclick="testEndpoint('/api/')">Test API Endpoint</button>
+    <button onclick="testEndpoint('/api/posts/')">Test Posts Endpoint</button>
+    <button onclick="testEndpoint('/api/token/')">Test Token Endpoint</button>
+    <div id="endpoint-results"></div>
+  </div>
+  
+  <div class="card">
+    <h2>Login Test</h2>
+    <div>
+      <label for="username">Username:</label>
+      <input type="text" id="username" placeholder="Enter username">
+    </div>
+    <div style="margin-top: 8px;">
+      <label for="password">Password:</label>
+      <input type="password" id="password" placeholder="Enter password">
+    </div>
+    <div style="margin-top: 16px;">
+      <button onclick="testLogin()">Test Login</button>
+    </div>
+    <div id="login-results"></div>
+  </div>
+
+  <script>
+    // Configure the backend URL
+    const BACKEND_URL = 'https://web-production-2f30.up.railway.app';
+    
+    // Display the backend URL
+    document.getElementById('backend-url').textContent = BACKEND_URL;
+    
+    // Function to check backend status
+    async function checkBackendStatus() {
+      const statusDiv = document.getElementById('backend-status');
+      statusDiv.innerHTML = '<p>Checking backend status...</p>';
+      
+      try {
+        const response = await fetch(BACKEND_URL, {
+          method: 'GET',
+          headers: {
+            'Accept': 'text/html,application/json'
+          }
+        });
+        
+        if (response.ok) {
+          statusDiv.innerHTML = `
+            <p class="success">✅ Backend is online (Status: ${response.status})</p>
+            <p>Response type: ${response.headers.get('content-type')}</p>
+          `;
+        } else {
+          statusDiv.innerHTML = `
+            <p class="error">❌ Backend returned error (Status: ${response.status} ${response.statusText})</p>
+          `;
+        }
+      } catch (error) {
+        statusDiv.innerHTML = `
+          <p class="error">❌ Failed to connect to backend: ${error.message}</p>
+        `;
+      }
+    }
+    
+    // Function to test an endpoint
+    async function testEndpoint(path) {
+      const resultsDiv = document.getElementById('endpoint-results');
+      const url = `${BACKEND_URL}${path}`;
+      
+      resultsDiv.innerHTML += `<p>Testing endpoint: ${url}...</p>`;
+      
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json, text/html'
+          }
+        });
+        
+        const contentType = response.headers.get('content-type');
+        let responseData;
+        
+        if (contentType && contentType.includes('application/json')) {
+          responseData = await response.json();
+          resultsDiv.innerHTML += `
+            <p class="success">✅ Endpoint ${path} returned JSON (Status: ${response.status})</p>
+            <pre>${JSON.stringify(responseData, null, 2)}</pre>
+          `;
+        } else {
+          responseData = await response.text();
+          const truncatedText = responseData.length > 500 
+            ? responseData.substring(0, 500) + '... (truncated)'
+            : responseData;
+          
+          resultsDiv.innerHTML += `
+            <p class="${response.ok ? 'success' : 'error'}">
+              ${response.ok ? '✅' : '❌'} Endpoint ${path} returned text (Status: ${response.status})
+            </p>
+            <pre>${truncatedText}</pre>
+          `;
+        }
+      } catch (error) {
+        resultsDiv.innerHTML += `
+          <p class="error">❌ Failed to test endpoint ${path}: ${error.message}</p>
+        `;
+      }
+      
+      resultsDiv.innerHTML += '<hr>';
+    }
+    
+    // Function to test login
+    async function testLogin() {
+      const resultsDiv = document.getElementById('login-results');
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      
+      if (!username || !password) {
+        resultsDiv.innerHTML = `<p class="error">Please enter both username and password</p>`;
+        return;
+      }
+      
+      resultsDiv.innerHTML = `<p>Attempting login with username: ${username}...</p>`;
+      
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/token/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ username, password })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          resultsDiv.innerHTML = `
+            <p class="success">✅ Login successful!</p>
+            <p>Access token received (first 20 chars): ${data.access.substring(0, 20)}...</p>
+            <p>Refresh token received (first 20 chars): ${data.refresh.substring(0, 20)}...</p>
+          `;
+        } else {
+          let errorMessage;
+          try {
+            const errorData = await response.json();
+            errorMessage = JSON.stringify(errorData);
+          } catch {
+            errorMessage = await response.text();
+          }
+          
+          resultsDiv.innerHTML = `
+            <p class="error">❌ Login failed (Status: ${response.status} ${response.statusText})</p>
+            <pre>${errorMessage}</pre>
+          `;
+        }
+      } catch (error) {
+        resultsDiv.innerHTML = `
+          <p class="error">❌ Failed to test login: ${error.message}</p>
+        `;
+      }
+    }
+    
+    // Check backend status on load
+    window.onload = checkBackendStatus;
+  </script>
+</body>
+</html> 

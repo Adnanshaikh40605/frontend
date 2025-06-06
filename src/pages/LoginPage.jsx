@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../context/AuthContext';
+import { API_URL, ENDPOINTS } from '../api/apiEndpoints';
 
 const Container = styled.div`
   display: flex;
@@ -84,14 +85,58 @@ const ErrorMessage = styled.div`
   text-align: center;
 `;
 
+const InfoMessage = styled.div`
+  color: #0c5460;
+  background-color: #d1ecf1;
+  border-radius: 4px;
+  padding: 0.5rem;
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  text-align: center;
+`;
+
+const ApiTestLink = styled.a`
+  display: block;
+  margin-top: 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #007bff;
+  text-decoration: underline;
+`;
+
 const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [apiInfo, setApiInfo] = useState('');
   
   const { login, error } = useAuth();
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    // Display API info for debugging
+    setApiInfo(`API URL: ${API_URL}`);
+    
+    // Check if the backend is reachable
+    const checkBackend = async () => {
+      try {
+        const response = await fetch(`${API_URL}/`, { 
+          method: 'GET',
+          headers: { 'Accept': 'text/html,application/json' }
+        });
+        if (response.ok) {
+          setApiInfo(prev => `${prev} (Backend is reachable)`);
+        } else {
+          setApiInfo(prev => `${prev} (Backend returned ${response.status})`);
+        }
+      } catch (err) {
+        setApiInfo(prev => `${prev} (Backend connection failed: ${err.message})`);
+      }
+    };
+    
+    checkBackend();
+  }, []);
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -151,6 +196,12 @@ const LoginPage = () => {
             {loginError || error}
           </ErrorMessage>
         )}
+        
+        <InfoMessage>{apiInfo}</InfoMessage>
+        
+        <ApiTestLink href="/api-test.html" target="_blank">
+          Test API Connection
+        </ApiTestLink>
       </LoginForm>
     </Container>
   );

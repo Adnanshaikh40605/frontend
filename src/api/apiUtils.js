@@ -1,11 +1,21 @@
 // apiUtils.js - Contains utility functions for API operations
 
 import { getAuthToken, isAuthenticated, isTokenExpired, parseJwt } from '../utils/authUtils';
-import { ENDPOINTS } from './apiEndpoints';
+import { ENDPOINTS, API_URL } from './apiEndpoints';
 import axios from 'axios';
 
 // Configure axios defaults for CORS
 axios.defaults.withCredentials = true;
+
+// Configure axios defaults for the base URL
+axios.defaults.baseURL = API_URL;
+
+// Add axios request interceptor for CORS headers
+axios.interceptors.request.use(config => {
+  // Add CORS headers to all requests
+  config.headers['Access-Control-Allow-Origin'] = '*';
+  return config;
+});
 
 // Get CSRF token from cookies
 export const getCookie = (name) => {
@@ -27,9 +37,13 @@ export const refreshAuthToken = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
       },
       body: JSON.stringify({ refresh: refreshToken }),
-      credentials: 'include'
+      credentials: 'include',
+      mode: 'cors'
     });
 
     if (!response.ok) {
@@ -71,6 +85,11 @@ export const getHeaders = async (includeContentType = true) => {
   
   // Add X-Requested-With header to identify AJAX requests
   headers['X-Requested-With'] = 'XMLHttpRequest';
+  
+  // Add CORS headers
+  headers['Access-Control-Allow-Origin'] = '*';
+  headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+  headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
   
   // Get current token
   let token = getAuthToken();
