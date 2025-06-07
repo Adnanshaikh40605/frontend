@@ -80,26 +80,103 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     
     try {
-      const response = await axios.post(ENDPOINTS.TOKEN, {
-        username,
-        password
-      });
+      console.log('Attempting login with endpoint:', ENDPOINTS.TOKEN);
       
-      // Store tokens
-      localStorage.setItem('accessToken', response.data.access);
-      localStorage.setItem('refreshToken', response.data.refresh);
+      // Try the regular token endpoint first
+      try {
+        console.log('Trying token endpoint:', ENDPOINTS.TOKEN);
+        const response = await axios({
+          method: 'POST',
+          url: ENDPOINTS.TOKEN,
+          data: { username, password },
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          withCredentials: false // Set to false since we're using token-based auth
+        });
+        
+        console.log('Login response:', response.data);
+        
+        if (response.data.access) {
+          // Store tokens
+          localStorage.setItem('accessToken', response.data.access);
+          localStorage.setItem('refreshToken', response.data.refresh);
+          
+          // Set auth header
+          axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
+          
+          // Fetch user profile
+          try {
+            const userResponse = await axios.get(ENDPOINTS.PROFILE);
+            setCurrentUser(userResponse.data);
+          } catch (profileErr) {
+            console.warn('Could not fetch profile, but login succeeded:', profileErr);
+            // Create a minimal user object based on the username
+            setCurrentUser({ username });
+          }
+          
+          return true;
+        }
+      } catch (tokenErr) {
+        console.warn('Token endpoint failed:', tokenErr);
+        console.warn('Token endpoint error details:', tokenErr.response?.data || tokenErr.message);
+        
+        // If token endpoint fails, try debug endpoint as fallback
+        console.log('Trying debug endpoint:', ENDPOINTS.DEBUG_TOKEN);
+        const debugResponse = await axios({
+          method: 'POST',
+          url: ENDPOINTS.DEBUG_TOKEN,
+          data: { username, password },
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          withCredentials: false
+        });
+        
+        if (debugResponse.data.access) {
+          // Store tokens
+          localStorage.setItem('accessToken', debugResponse.data.access);
+          localStorage.setItem('refreshToken', debugResponse.data.refresh);
+          
+          // Set auth header
+          axios.defaults.headers.common['Authorization'] = `Bearer ${debugResponse.data.access}`;
+          
+          // Fetch user profile
+          try {
+            const userResponse = await axios.get(ENDPOINTS.PROFILE);
+            setCurrentUser(userResponse.data);
+          } catch (profileErr) {
+            console.warn('Could not fetch profile, but login succeeded:', profileErr);
+            // Create a minimal user object based on the username
+            setCurrentUser({ username });
+          }
+          
+          return true;
+        }
+      }
       
-      // Set auth header
-      axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
-      
-      // Fetch user profile
-      const userResponse = await axios.get(ENDPOINTS.PROFILE);
-      setCurrentUser(userResponse.data);
-      
-      return true;
+      throw new Error('Both token endpoints failed');
     } catch (err) {
       console.error('Login failed:', err);
-      setError(err.response?.data?.detail || 'Login failed. Please check your credentials.');
+      
+      // Enhanced error logging
+      if (err.response) {
+        // The request was made and the server responded with a status code
+        console.error('Error response:', err.response.status, err.response.data);
+      } else if (err.request) {
+        // The request was made but no response was received
+        console.error('No response received:', err.request);
+      } else {
+        // Something happened in setting up the request
+        console.error('Request setup error:', err.message);
+      }
+      
+      const errorMessage = err.response?.data?.detail || 
+                          err.response?.data?.error || 
+                          err.message || 
+                          'Login failed. Please check your credentials and ensure the backend is running.';
+      
+      setError(errorMessage);
       return false;
     }
   };

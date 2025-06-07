@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Local API Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      background-color: #f9f9f9;
+    }
+    button {
+      background-color: #0066cc;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 8px;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .success { color: green; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+  <h1>Local API Test Tool</h1>
+  <p>This tool helps diagnose API connectivity issues in local development.</p>
+  
+  <div class="card">
+    <h2>API Configuration</h2>
+    <div>
+      <label for="backend-url">Backend URL:</label>
+      <input type="text" id="backend-url" value="http://localhost:8000">
+    </div>
+    <div>
+      <label for="frontend-url">Frontend URL:</label>
+      <input type="text" id="frontend-url" value="http://localhost:3000">
+    </div>
+    <button onclick="saveConfig()">Save Configuration</button>
+  </div>
+  
+  <div class="card">
+    <h2>Backend Status Check</h2>
+    <button onclick="checkBackendStatus()">Check Backend Status</button>
+    <div id="backend-status"></div>
+  </div>
+  
+  <div class="card">
+    <h2>CORS Test</h2>
+    <p>Test if CORS is properly configured:</p>
+    <button onclick="testCORS()">Test CORS Configuration</button>
+    <div id="cors-result"></div>
+  </div>
+  
+  <div class="card">
+    <h2>API Endpoints Test</h2>
+    <select id="endpoint-select">
+      <option value="/">Root Endpoint</option>
+      <option value="/api/">API Root</option>
+      <option value="/api/posts/">Posts Endpoint</option>
+      <option value="/api/debug-token/">Debug Token</option>
+      <option value="/api/token/">Token Endpoint (GET)</option>
+    </select>
+    <select id="method-select">
+      <option value="GET">GET</option>
+      <option value="OPTIONS">OPTIONS</option>
+    </select>
+    <button onclick="testEndpoint()">Test Endpoint</button>
+    <div id="endpoint-result"></div>
+  </div>
+  
+  <div class="card">
+    <h2>Authentication Test</h2>
+    <div>
+      <label for="username">Username:</label>
+      <input type="text" id="username" placeholder="Enter username">
+    </div>
+    <div>
+      <label for="password">Password:</label>
+      <input type="password" id="password" placeholder="Enter password">
+    </div>
+    <button onclick="testAuth()">Test Authentication</button>
+    <div id="auth-result"></div>
+  </div>
+
+  <script>
+    // Default configuration
+    let config = {
+      backendUrl: 'http://localhost:8000',
+      frontendUrl: 'http://localhost:3000'
+    };
+    
+    // Load saved configuration
+    function loadConfig() {
+      const savedConfig = localStorage.getItem('localApiTestConfig');
+      if (savedConfig) {
+        try {
+          config = JSON.parse(savedConfig);
+          document.getElementById('backend-url').value = config.backendUrl;
+          document.getElementById('frontend-url').value = config.frontendUrl;
+        } catch (e) {
+          console.error('Failed to load config:', e);
+        }
+      }
+    }
+    
+    // Save configuration
+    function saveConfig() {
+      config.backendUrl = document.getElementById('backend-url').value.trim();
+      config.frontendUrl = document.getElementById('frontend-url').value.trim();
+      
+      localStorage.setItem('localApiTestConfig', JSON.stringify(config));
+      alert('Configuration saved!');
+    }
+    
+    // Check backend status
+    async function checkBackendStatus() {
+      const statusDiv = document.getElementById('backend-status');
+      statusDiv.innerHTML = '<p>Checking backend status...</p>';
+      
+      try {
+        const response = await fetch(config.backendUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json, text/html'
+          }
+        });
+        
+        if (response.ok) {
+          statusDiv.innerHTML = `
+            <p class="success">✅ Backend is online (Status: ${response.status})</p>
+            <p>Content Type: ${response.headers.get('content-type')}</p>
+          `;
+          
+          try {
+            const text = await response.text();
+            statusDiv.innerHTML += `<pre>${text.substring(0, 300)}${text.length > 300 ? '...' : ''}</pre>`;
+          } catch (e) {
+            statusDiv.innerHTML += `<p>Could not read response body: ${e.message}</p>`;
+          }
+        } else {
+          statusDiv.innerHTML = `
+            <p class="error">❌ Backend returned error (Status: ${response.status} ${response.statusText})</p>
+          `;
+        }
+      } catch (error) {
+        statusDiv.innerHTML = `
+          <p class="error">❌ Failed to connect to backend: ${error.message}</p>
+          <p>Make sure your backend server is running at ${config.backendUrl}</p>
+        `;
+      }
+    }
+    
+    // Test CORS configuration
+    async function testCORS() {
+      const resultDiv = document.getElementById('cors-result');
+      resultDiv.innerHTML = '<p>Testing CORS configuration...</p>';
+      
+      try {
+        const response = await fetch(`${config.backendUrl}/api/`, {
+          method: 'OPTIONS',
+          headers: {
+            'Origin': config.frontendUrl,
+            'Access-Control-Request-Method': 'POST',
+            'Access-Control-Request-Headers': 'Content-Type, Authorization'
+          }
+        });
+        
+        // Get CORS headers
+        const corsHeaders = {
+          'access-control-allow-origin': response.headers.get('access-control-allow-origin'),
+          'access-control-allow-methods': response.headers.get('access-control-allow-methods'),
+          'access-control-allow-headers': response.headers.get('access-control-allow-headers'),
+          'access-control-allow-credentials': response.headers.get('access-control-allow-credentials')
+        };
+        
+        if (corsHeaders['access-control-allow-origin']) {
+          resultDiv.innerHTML = `
+            <p class="success">✅ CORS appears to be configured (Status: ${response.status})</p>
+            <p>CORS Headers:</p>
+            <pre>${JSON.stringify(corsHeaders, null, 2)}</pre>
+          `;
+        } else {
+          resultDiv.innerHTML = `
+            <p class="error">❌ CORS headers not found in response (Status: ${response.status})</p>
+            <p>All response headers:</p>
+            <pre>${JSON.stringify(Object.fromEntries([...response.headers]), null, 2)}</pre>
+          `;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `
+          <p class="error">❌ CORS test failed: ${error.message}</p>
+        `;
+      }
+    }
+    
+    // Test specific endpoint
+    async function testEndpoint() {
+      const resultDiv = document.getElementById('endpoint-result');
+      const endpoint = document.getElementById('endpoint-select').value;
+      const method = document.getElementById('method-select').value;
+      
+      resultDiv.innerHTML = `<p>Testing ${method} ${endpoint}...</p>`;
+      
+      try {
+        const response = await fetch(`${config.backendUrl}${endpoint}`, {
+          method: method,
+          headers: {
+            'Accept': 'application/json',
+            'Origin': config.frontendUrl
+          }
+        });
+        
+        // Get all headers
+        const headers = {};
+        response.headers.forEach((value, key) => {
+          headers[key] = value;
+        });
+        
+        let responseBody;
+        try {
+          if (response.headers.get('content-type')?.includes('application/json')) {
+            responseBody = await response.json();
+            responseBody = JSON.stringify(responseBody, null, 2);
+          } else {
+            responseBody = await response.text();
+            if (responseBody.length > 500) {
+              responseBody = responseBody.substring(0, 500) + '... (truncated)';
+            }
+          }
+        } catch (e) {
+          responseBody = `Error reading response: ${e.message}`;
+        }
+        
+        resultDiv.innerHTML = `
+          <p class="${response.ok ? 'success' : 'error'}">
+            ${response.ok ? '✅' : '❌'} ${method} ${endpoint} - Status: ${response.status} ${response.statusText}
+          </p>
+          <p>Response Headers:</p>
+          <pre>${JSON.stringify(headers, null, 2)}</pre>
+          <p>Response Body:</p>
+          <pre>${responseBody}</pre>
+        `;
+      } catch (error) {
+        resultDiv.innerHTML = `
+          <p class="error">❌ Request failed: ${error.message}</p>
+        `;
+      }
+    }
+    
+    // Test authentication
+    async function testAuth() {
+      const resultDiv = document.getElementById('auth-result');
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      
+      if (!username || !password) {
+        resultDiv.innerHTML = '<p class="error">Please enter both username and password</p>';
+        return;
+      }
+      
+      resultDiv.innerHTML = '<p>Testing authentication...</p>';
+      
+      // First try debug token endpoint
+      try {
+        resultDiv.innerHTML += '<p>Trying debug-token endpoint...</p>';
+        
+        const debugResponse = await fetch(`${config.backendUrl}/api/debug-token/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Origin': config.frontendUrl
+          },
+          body: JSON.stringify({ username, password })
+        });
+        
+        if (debugResponse.ok) {
+          const data = await debugResponse.json();
+          resultDiv.innerHTML = `
+            <p class="success">✅ Debug token authentication successful!</p>
+            <pre>${JSON.stringify(data, null, 2)}</pre>
+          `;
+          return;
+        } else {
+          resultDiv.innerHTML += `
+            <p>Debug token failed with status: ${debugResponse.status}</p>
+            <p>Trying regular token endpoint...</p>
+          `;
+        }
+      } catch (error) {
+        resultDiv.innerHTML += `
+          <p>Debug token error: ${error.message}</p>
+          <p>Trying regular token endpoint...</p>
+        `;
+      }
+      
+      // Try regular token endpoint
+      try {
+        const response = await fetch(`${config.backendUrl}/api/token/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Origin': config.frontendUrl
+          },
+          body: JSON.stringify({ username, password })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          resultDiv.innerHTML = `
+            <p class="success">✅ Authentication successful!</p>
+            <pre>${JSON.stringify(data, null, 2)}</pre>
+          `;
+        } else {
+          let errorData;
+          try {
+            errorData = await response.json();
+          } catch (e) {
+            errorData = await response.text();
+          }
+          
+          resultDiv.innerHTML = `
+            <p class="error">❌ Authentication failed (Status: ${response.status} ${response.statusText})</p>
+            <pre>${typeof errorData === 'string' ? errorData : JSON.stringify(errorData, null, 2)}</pre>
+          `;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `
+          <p class="error">❌ Authentication request failed: ${error.message}</p>
+        `;
+      }
+    }
+    
+    // Load configuration on page load
+    window.onload = loadConfig;
+  </script>
+</body>
+</html> 

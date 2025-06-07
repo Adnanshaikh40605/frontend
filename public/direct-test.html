@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Direct API Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1, h2 {
+      color: #0066cc;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      background-color: #f9f9f9;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 14px;
+    }
+    textarea {
+      min-height: 100px;
+    }
+    button {
+      background-color: #0066cc;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #004c99;
+    }
+    pre {
+      background-color: #f1f1f1;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+    .error {
+      color: #dc3545;
+    }
+    .success {
+      color: #28a745;
+    }
+  </style>
+</head>
+<body>
+  <h1>Direct API Test</h1>
+  <p>This tool bypasses all frontend code and makes direct requests to the API.</p>
+  
+  <div class="card">
+    <h2>API Configuration</h2>
+    <div class="form-group">
+      <label for="api-url">API Base URL:</label>
+      <input type="text" id="api-url" value="https://web-production-2f30.up.railway.app">
+    </div>
+    <div class="form-group">
+      <label for="frontend-origin">Frontend Origin:</label>
+      <input type="text" id="frontend-origin" value="https://dohblog.vercel.app">
+    </div>
+    <button onclick="saveConfig()">Save Configuration</button>
+  </div>
+  
+  <div class="card">
+    <h2>Authentication Test</h2>
+    <div class="form-group">
+      <label for="username">Username:</label>
+      <input type="text" id="username" placeholder="Enter username">
+    </div>
+    <div class="form-group">
+      <label for="password">Password:</label>
+      <input type="password" id="password" placeholder="Enter password">
+    </div>
+    <div class="form-group">
+      <label for="auth-endpoint">Authentication Endpoint:</label>
+      <select id="auth-endpoint">
+        <option value="/api/token/">Regular Token Endpoint</option>
+        <option value="/api/debug-token/" selected>Debug Token Endpoint</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Options:</label>
+      <div>
+        <input type="checkbox" id="include-credentials" checked>
+        <label for="include-credentials" style="display:inline">Include credentials</label>
+      </div>
+      <div>
+        <input type="checkbox" id="use-cors" checked>
+        <label for="use-cors" style="display:inline">Use CORS mode</label>
+      </div>
+    </div>
+    <button onclick="testAuthentication()">Test Authentication</button>
+    <div id="auth-result" class="form-group"></div>
+  </div>
+  
+  <div class="card">
+    <h2>Custom API Request</h2>
+    <div class="form-group">
+      <label for="endpoint">API Endpoint:</label>
+      <input type="text" id="endpoint" placeholder="/api/posts/">
+    </div>
+    <div class="form-group">
+      <label for="method">HTTP Method:</label>
+      <select id="method">
+        <option value="GET">GET</option>
+        <option value="POST">POST</option>
+        <option value="PUT">PUT</option>
+        <option value="PATCH">PATCH</option>
+        <option value="DELETE">DELETE</option>
+        <option value="OPTIONS">OPTIONS</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="request-body">Request Body (JSON):</label>
+      <textarea id="request-body" placeholder='{"key": "value"}'></textarea>
+    </div>
+    <div class="form-group">
+      <label for="auth-token">Authorization Token (optional):</label>
+      <input type="text" id="auth-token" placeholder="Bearer token">
+    </div>
+    <button onclick="sendApiRequest()">Send Request</button>
+    <div id="request-result" class="form-group"></div>
+  </div>
+
+  <script>
+    // Default configuration
+    let config = {
+      apiUrl: 'https://web-production-2f30.up.railway.app',
+      frontendOrigin: 'https://dohblog.vercel.app'
+    };
+    
+    // Load saved configuration from localStorage
+    function loadConfig() {
+      const savedConfig = localStorage.getItem('apiTestConfig');
+      if (savedConfig) {
+        try {
+          config = JSON.parse(savedConfig);
+          document.getElementById('api-url').value = config.apiUrl;
+          document.getElementById('frontend-origin').value = config.frontendOrigin;
+        } catch (e) {
+          console.error('Failed to load saved configuration:', e);
+        }
+      }
+    }
+    
+    // Save configuration to localStorage
+    function saveConfig() {
+      config.apiUrl = document.getElementById('api-url').value.trim();
+      config.frontendOrigin = document.getElementById('frontend-origin').value.trim();
+      
+      localStorage.setItem('apiTestConfig', JSON.stringify(config));
+      alert('Configuration saved!');
+    }
+    
+    // Test authentication
+    async function testAuthentication() {
+      const resultDiv = document.getElementById('auth-result');
+      resultDiv.innerHTML = '<p>Testing authentication...</p>';
+      
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const endpoint = document.getElementById('auth-endpoint').value;
+      const includeCredentials = document.getElementById('include-credentials').checked;
+      const useCors = document.getElementById('use-cors').checked;
+      
+      if (!username || !password) {
+        resultDiv.innerHTML = '<p class="error">Please enter both username and password</p>';
+        return;
+      }
+      
+      try {
+        const requestOptions = {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Origin': config.frontendOrigin
+          },
+          body: JSON.stringify({ username, password })
+        };
+        
+        if (useCors) {
+          requestOptions.mode = 'cors';
+        }
+        
+        if (includeCredentials) {
+          requestOptions.credentials = 'include';
+        }
+        
+        const response = await fetch(`${config.apiUrl}${endpoint}`, requestOptions);
+        
+        // Get all response headers
+        const headers = {};
+        response.headers.forEach((value, key) => {
+          headers[key] = value;
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Save token for later use
+          if (data.access) {
+            localStorage.setItem('testAuthToken', data.access);
+          }
+          
+          resultDiv.innerHTML = `
+            <p class="success">✅ Authentication successful!</p>
+            <h3>Response Headers:</h3>
+            <pre>${JSON.stringify(headers, null, 2)}</pre>
+            <h3>Response Data:</h3>
+            <pre>${JSON.stringify(data, null, 2)}</pre>
+          `;
+        } else {
+          let errorData;
+          try {
+            errorData = await response.json();
+          } catch (e) {
+            errorData = await response.text();
+          }
+          
+          resultDiv.innerHTML = `
+            <p class="error">❌ Authentication failed (${response.status} ${response.statusText})</p>
+            <h3>Response Headers:</h3>
+            <pre>${JSON.stringify(headers, null, 2)}</pre>
+            <h3>Response Data:</h3>
+            <pre>${typeof errorData === 'string' ? errorData : JSON.stringify(errorData, null, 2)}</pre>
+          `;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `
+          <p class="error">❌ Request error: ${error.message}</p>
+          <pre>${error.stack}</pre>
+        `;
+      }
+    }
+    
+    // Send custom API request
+    async function sendApiRequest() {
+      const resultDiv = document.getElementById('request-result');
+      resultDiv.innerHTML = '<p>Sending request...</p>';
+      
+      const endpoint = document.getElementById('endpoint').value;
+      const method = document.getElementById('method').value;
+      const bodyText = document.getElementById('request-body').value;
+      const authToken = document.getElementById('auth-token').value;
+      
+      try {
+        const requestOptions = {
+          method,
+          headers: {
+            'Accept': 'application/json',
+            'Origin': config.frontendOrigin
+          },
+          mode: 'cors',
+          credentials: 'include'
+        };
+        
+        // Add authorization header if token is provided
+        if (authToken) {
+          requestOptions.headers['Authorization'] = authToken.startsWith('Bearer ') 
+            ? authToken 
+            : `Bearer ${authToken}`;
+        }
+        
+        // Add request body for non-GET requests
+        if (method !== 'GET' && method !== 'OPTIONS' && bodyText.trim()) {
+          try {
+            const bodyJson = JSON.parse(bodyText);
+            requestOptions.body = JSON.stringify(bodyJson);
+            requestOptions.headers['Content-Type'] = 'application/json';
+          } catch (e) {
+            resultDiv.innerHTML = `<p class="error">Invalid JSON in request body: ${e.message}</p>`;
+            return;
+          }
+        }
+        
+        const response = await fetch(`${config.apiUrl}${endpoint}`, requestOptions);
+        
+        // Get all response headers
+        const headers = {};
+        response.headers.forEach((value, key) => {
+          headers[key] = value;
+        });
+        
+        // Try to parse response as JSON
+        let responseData;
+        const contentType = response.headers.get('content-type');
+        
+        if (contentType && contentType.includes('application/json')) {
+          responseData = await response.json();
+        } else {
+          responseData = await response.text();
+        }
+        
+        resultDiv.innerHTML = `
+          <p class="${response.ok ? 'success' : 'error'}">
+            ${response.ok ? '✅' : '❌'} ${method} ${endpoint} - Status: ${response.status} ${response.statusText}
+          </p>
+          <h3>Response Headers:</h3>
+          <pre>${JSON.stringify(headers, null, 2)}</pre>
+          <h3>Response Data:</h3>
+          <pre>${typeof responseData === 'string' ? responseData : JSON.stringify(responseData, null, 2)}</pre>
+        `;
+      } catch (error) {
+        resultDiv.innerHTML = `
+          <p class="error">❌ Request error: ${error.message}</p>
+          <pre>${error.stack}</pre>
+        `;
+      }
+    }
+    
+    // Load saved configuration on page load
+    window.onload = function() {
+      loadConfig();
+      
+      // Pre-fill auth token if available
+      const savedToken = localStorage.getItem('testAuthToken');
+      if (savedToken) {
+        document.getElementById('auth-token').value = savedToken;
+      }
+    };
+  </script>
+</body>
+</html> 
