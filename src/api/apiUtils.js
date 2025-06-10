@@ -5,17 +5,57 @@ import { ENDPOINTS, API_URL } from './apiEndpoints';
 import axios from 'axios';
 
 // Configure axios defaults for CORS
-axios.defaults.withCredentials = true;
+axios.defaults.withCredentials = false;
 
 // Configure axios defaults for the base URL
 axios.defaults.baseURL = API_URL;
 
+// Log the base URL for debugging
+console.log('Axios base URL:', axios.defaults.baseURL);
+
+// Configure axios to always use absolute URLs
+const originalAxiosGet = axios.get;
+axios.get = function(url, config) {
+  // If URL doesn't start with http or https, prepend the API_URL
+  if (url && !url.startsWith('http')) {
+    url = `${API_URL}${url.startsWith('/') ? url : '/' + url}`;
+  }
+  console.log('GET request to:', url);
+  return originalAxiosGet(url, config);
+};
+
+const originalAxiosPost = axios.post;
+axios.post = function(url, data, config) {
+  // If URL doesn't start with http or https, prepend the API_URL
+  if (url && !url.startsWith('http')) {
+    url = `${API_URL}${url.startsWith('/') ? url : '/' + url}`;
+  }
+  console.log('POST request to:', url);
+  return originalAxiosPost(url, data, config);
+};
+
 // Add axios request interceptor for CORS headers
 axios.interceptors.request.use(config => {
-  // Add CORS headers to all requests
-  config.headers['Access-Control-Allow-Origin'] = '*';
+  // Log all requests for debugging
+  console.log(`Making ${config.method} request to: ${config.url}`);
+  
   return config;
 });
+
+// Add axios response interceptor for error handling
+axios.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response) {
+      console.error('Response error:', error.response.status, error.response.data);
+    } else if (error.request) {
+      console.error('Request error (no response):', error.request);
+    } else {
+      console.error('Error setting up request:', error.message);
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Get CSRF token from cookies
 export const getCookie = (name) => {
@@ -33,29 +73,19 @@ export const refreshAuthToken = async () => {
       throw new Error('No refresh token available');
     }
 
-    const response = await fetch(ENDPOINTS.TOKEN_REFRESH, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-      },
-      body: JSON.stringify({ refresh: refreshToken }),
-      credentials: 'include',
-      mode: 'cors'
-    });
+    const response = await axios.post(ENDPOINTS.TOKEN_REFRESH, 
+      { refresh: refreshToken },
+      { 
+        headers: { 'Content-Type': 'application/json' },
+        withCredentials: false,
+        skipAuthRefresh: true // Add flag to prevent refresh loop
+      }
+    );
 
-    if (!response.ok) {
-      throw new Error('Failed to refresh token');
-    }
-
-    const data = await response.json();
-    
     // Store the new tokens
-    if (data.access) {
-      localStorage.setItem('accessToken', data.access);
-      return data.access;
+    if (response.data.access) {
+      localStorage.setItem('accessToken', response.data.access);
+      return response.data.access;
     }
     
     throw new Error('No access token in refresh response');
@@ -85,11 +115,6 @@ export const getHeaders = async (includeContentType = true) => {
   
   // Add X-Requested-With header to identify AJAX requests
   headers['X-Requested-With'] = 'XMLHttpRequest';
-  
-  // Add CORS headers
-  headers['Access-Control-Allow-Origin'] = '*';
-  headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
-  headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
   
   // Get current token
   let token = getAuthToken();

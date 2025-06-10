@@ -11,6 +11,9 @@ export const MEDIA_URL = (import.meta.env.VITE_MEDIA_URL && import.meta.env.VITE
   ? import.meta.env.VITE_MEDIA_URL 
   : `${API_URL}/media/`;
 
+// Log the API URL for debugging
+console.log('API URL:', API_URL);
+
 // API Endpoints
 export const ENDPOINTS = {
   POSTS: `${API_URL}/api/posts/`,
@@ -24,6 +27,7 @@ export const ENDPOINTS = {
   TOKEN: `${API_URL}/api/token/`,
   TOKEN_REFRESH: `${API_URL}/api/token/refresh/`,
   TOKEN_VERIFY: `${API_URL}/api/token/verify/`,
+  DEBUG_TOKEN: `${API_URL}/api/debug-token/`,
   PROFILE: `${API_URL}/api/profile/`
 };
 
