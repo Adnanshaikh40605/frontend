@@ -2,9 +2,9 @@
 
 // Get environment variables with fallback to development values
 const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const DEFAULT_API_URL = isDevelopment ? 'http://localhost:8000' : 'https://web-production-2f30.up.railway.app';
-export const API_URL = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL !== 'undefined') 
-  ? import.meta.env.VITE_API_URL 
+const DEFAULT_API_URL = isDevelopment ? 'http://localhost:8000' : 'https://backend-production-49ec.up.railway.app';
+export const API_URL = (import.meta.env.VITE_API_BASE_URL && import.meta.env.VITE_API_BASE_URL !== 'undefined') 
+  ? import.meta.env.VITE_API_BASE_URL 
   : DEFAULT_API_URL;
   
 export const MEDIA_URL = (import.meta.env.VITE_MEDIA_URL && import.meta.env.VITE_MEDIA_URL !== 'undefined') 

@@ -69,7 +69,7 @@ export const ckEditorAPI = {
           const response = await fetch(ENDPOINTS.CKEDITOR_UPLOAD, {
             method: 'POST',
             headers: getHeaders(false), // Don't include Content-Type for file uploads
-            credentials: 'include',
+            credentials: 'same-origin',
             body: formData
           });
           
@@ -105,7 +105,7 @@ export const ckEditorAPI = {
         const response = await fetch(ENDPOINTS.CKEDITOR_UPLOAD, {
           method: 'POST',
           headers: getHeaders(false), // Don't include Content-Type for file uploads
-          credentials: 'include',
+          credentials: 'same-origin',
           body: formData
         });
         
@@ -259,7 +259,7 @@ export const postAPI = {
       const response = await fetch(ENDPOINTS.POSTS, {
         method: 'POST',
         headers: headers,
-        credentials: 'include',
+        credentials: 'same-origin',
         body: formData
       });
       return handleResponse(response);
@@ -316,7 +316,7 @@ export const postAPI = {
           const response = await fetch(`${ENDPOINTS.POSTS}${slug}/`, {
             method: 'PUT',
             headers: headers,
-            credentials: 'include',
+            credentials: 'same-origin',
             body: formData
           });
           return handleResponse(response);
@@ -328,7 +328,7 @@ export const postAPI = {
           const response = await fetch(`${ENDPOINTS.POSTS}${slug}/`, {
             method: 'PATCH',
             headers: headers,
-            credentials: 'include',
+            credentials: 'same-origin',
             body: formData
           });
           return handleResponse(response);
@@ -386,7 +386,7 @@ export const postAPI = {
         const response = await fetch(`${ENDPOINTS.POSTS}${id}/delete/`, {
           method: 'POST',
           headers: headers,
-          credentials: 'include'
+          credentials: 'same-origin'
         });
         
         // Check if the request was successful
@@ -423,7 +423,7 @@ export const postAPI = {
       const response = await fetch(`${ENDPOINTS.POSTS}${id}/upload_images/`, {
         method: 'POST',
         headers: getHeaders(false), // Don't include Content-Type for file uploads
-        credentials: 'include',
+        credentials: 'same-origin',
         body: formData
       });
       return handleResponse(response);
@@ -522,7 +522,7 @@ export const commentAPI = {
       const response = await fetch(ENDPOINTS.COMMENTS, {
         method: 'POST',
         headers: headers,
-        credentials: 'include',
+        credentials: 'same-origin',
         body: formData
       });
       return handleResponse(response);
@@ -547,7 +547,7 @@ export const commentAPI = {
       const response = await fetch(`${ENDPOINTS.COMMENTS}${id}/approve/`, {
         method: 'POST',
         headers: headers,
-        credentials: 'include'
+        credentials: 'same-origin'
       });
       return handleResponse(response);
     } catch (error) {
@@ -571,7 +571,7 @@ export const commentAPI = {
       const response = await fetch(`${ENDPOINTS.COMMENTS}${id}/reject/`, {
         method: 'POST',
         headers: headers,
-        credentials: 'include'
+        credentials: 'same-origin'
       });
       return handleResponse(response);
     } catch (error) {
@@ -598,7 +598,7 @@ export const commentAPI = {
       const response = await fetch(ENDPOINTS.BULK_APPROVE, {
         method: 'POST',
         headers: headers,
-        credentials: 'include',
+        credentials: 'same-origin',
         body: formData
       });
       return handleResponse(response);
@@ -626,7 +626,7 @@ export const commentAPI = {
       const response = await fetch(ENDPOINTS.BULK_REJECT, {
         method: 'POST',
         headers: headers,
-        credentials: 'include',
+        credentials: 'same-origin',
         body: formData
       });
       return handleResponse(response);
@@ -680,7 +680,7 @@ export const commentAPI = {
       const response = await fetch(`${ENDPOINTS.COMMENTS}${id}/trash/`, {
         method: 'POST',
         headers: headers,
-        credentials: 'include'
+        credentials: 'same-origin'
       });
       return handleResponse(response);
     } catch (error) {
@@ -704,7 +704,7 @@ export const commentAPI = {
       const response = await fetch(`${ENDPOINTS.COMMENTS}${id}/restore/`, {
         method: 'POST',
         headers: headers,
-        credentials: 'include'
+        credentials: 'same-origin'
       });
       return handleResponse(response);
     } catch (error) {
@@ -728,7 +728,7 @@ export const commentAPI = {
       const response = await fetch(`${ENDPOINTS.COMMENTS}${id}/delete/`, {
         method: 'POST',
         headers: headers,
-        credentials: 'include'
+        credentials: 'same-origin'
       });
       return handleResponse(response);
     } catch (error) {
@@ -752,7 +752,7 @@ export const commentAPI = {
       const response = await fetch(`${ENDPOINTS.COMMENTS}${id}/reply/`, {
         method: 'POST',
         headers: headers,
-        credentials: 'include',
+        credentials: 'same-origin',
         body: JSON.stringify(replyData)
       });
       return handleResponse(response);

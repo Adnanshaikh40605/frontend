@@ -5,7 +5,7 @@ import { ENDPOINTS, API_URL } from './apiEndpoints';
 import axios from 'axios';
 
 // Configure axios defaults for CORS
-axios.defaults.withCredentials = false;
+axios.defaults.withCredentials = true; // Set to true to include credentials with requests
 
 // Configure axios defaults for the base URL
 axios.defaults.baseURL = API_URL;

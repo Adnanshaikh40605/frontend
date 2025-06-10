@@ -95,7 +95,7 @@ export const AuthProvider = ({ children }) => {
           headers: {
             'Content-Type': 'application/json'
           },
-          withCredentials: false // Set to false since we're using token-based auth
+          withCredentials: true // Changed to true for consistency with backend CORS policy
         });
         
         console.log('Login response:', response.data);
@@ -133,7 +133,7 @@ export const AuthProvider = ({ children }) => {
           headers: {
             'Content-Type': 'application/json'
           },
-          withCredentials: false
+          withCredentials: true // Changed to true for consistency with backend CORS policy
         });
         
         if (debugResponse.data.access) {
