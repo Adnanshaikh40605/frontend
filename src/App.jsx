@@ -23,6 +23,10 @@ import CommentsPage from './pages/CommentsPage';
 import BlogListPage from './pages/BlogListPage';
 import BlogPage from './pages/BlogPage';
 import BlogPostPage from './pages/BlogPostPage';
+import LoginPage from './pages/LoginPage';
+
+// Import Protected Route component
+import ProtectedRoute from './components/ProtectedRoute';
 
 // Import API test utility (will be available in window.testApi)
 import './utils/apiTest';
@@ -349,11 +353,30 @@ const App = () => {
               <Route path="/" element={<Layout />}>
                 <Route index element={<HomePage />} />
                 
-                {/* Admin routes - now public */}
-                <Route path="admin/posts" element={<PostListPage />} />
-                <Route path="admin/posts/new" element={<PostFormPage />} />
-                <Route path="admin/posts/:slug/edit" element={<PostFormPage />} />
-                <Route path="admin/comments" element={<CommentsPage />} />
+                {/* Auth routes */}
+                <Route path="login" element={<LoginPage />} />
+                
+                {/* Admin routes - protected */}
+                <Route path="admin/posts" element={
+                  <ProtectedRoute adminOnly>
+                    <PostListPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="admin/posts/new" element={
+                  <ProtectedRoute adminOnly>
+                    <PostFormPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="admin/posts/:slug/edit" element={
+                  <ProtectedRoute adminOnly>
+                    <PostFormPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="admin/comments" element={
+                  <ProtectedRoute adminOnly>
+                    <CommentsPage />
+                  </ProtectedRoute>
+                } />
                 
                 {/* Public blog routes */}
                 <Route path="blog" element={<BlogListPage />} />
@@ -363,9 +386,17 @@ const App = () => {
                 <Route path="posts">
                   <Route index element={<Navigate to="/admin/posts" replace />} />
                   <Route path="new" element={<Navigate to="/admin/posts/new" replace />} />
-                  <Route path="edit/:slug" element={<PostFormPage />} />
+                  <Route path="edit/:slug" element={
+                    <ProtectedRoute adminOnly>
+                      <PostFormPage />
+                    </ProtectedRoute>
+                  } />
                   {/* Add compatibility for old ID-based routes */}
-                  <Route path=":id/edit" element={<PostFormPage />} />
+                  <Route path=":id/edit" element={
+                    <ProtectedRoute adminOnly>
+                      <PostFormPage />
+                    </ProtectedRoute>
+                  } />
                 </Route>
               </Route>
               

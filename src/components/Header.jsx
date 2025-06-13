@@ -273,14 +273,14 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, isAuthenticated } = useAuth();
   
   // Force re-render when auth state changes
-  const [authState, setAuthState] = useState(!!currentUser);
+  const [authState, setAuthState] = useState(isAuthenticated);
   
   useEffect(() => {
-    setAuthState(!!currentUser);
-  }, [currentUser]);
+    setAuthState(isAuthenticated);
+  }, [isAuthenticated, currentUser]);
   
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -331,39 +331,43 @@ const Header = () => {
           
           <Divider />
           
-          {currentUser && (
+          {isAuthenticated && currentUser && (
             <NavLinkGroup>
               <NavLink to="/" className={location.pathname === '/' ? 'active' : ''} onClick={closeMenu}>
                 Dashboard
               </NavLink>
-              <NavLink 
-                to="/admin/posts" 
-                className={location.pathname.startsWith('/admin/posts') ? 'active' : ''}
-                onClick={closeMenu}
-              >
-                Manage Post
-              </NavLink>
-              <NavLink 
-                to="/admin/posts/new" 
-                className={location.pathname === '/admin/posts/new' ? 'active' : ''}
-                onClick={closeMenu}
-              >
-                Create Post
-              </NavLink>
-              <NavLink 
-                to="/admin/comments" 
-                className={location.pathname === '/admin/comments' ? 'active' : ''}
-                onClick={closeMenu}
-              >
-                Comments
-              </NavLink>
+              {currentUser.is_staff && (
+                <>
+                  <NavLink 
+                    to="/admin/posts" 
+                    className={location.pathname.startsWith('/admin/posts') ? 'active' : ''}
+                    onClick={closeMenu}
+                  >
+                    Manage Post
+                  </NavLink>
+                  <NavLink 
+                    to="/admin/posts/new" 
+                    className={location.pathname === '/admin/posts/new' ? 'active' : ''}
+                    onClick={closeMenu}
+                  >
+                    Create Post
+                  </NavLink>
+                  <NavLink 
+                    to="/admin/comments" 
+                    className={location.pathname === '/admin/comments' ? 'active' : ''}
+                    onClick={closeMenu}
+                  >
+                    Comments
+                  </NavLink>
+                </>
+              )}
             </NavLinkGroup>
           )}
           
           <Divider />
           
           <UserSection>
-            {currentUser ? (
+            {isAuthenticated && currentUser ? (
               <>
                 <UserInfo>
                   <UserAvatar>{getUserInitials()}</UserAvatar>

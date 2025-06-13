@@ -16,6 +16,7 @@ console.log('API URL:', API_URL);
 
 // API Endpoints
 export const ENDPOINTS = {
+  // Blog endpoints
   POSTS: `${API_URL}/api/posts/`,
   COMMENTS: `${API_URL}/api/comments/`,
   IMAGES: `${API_URL}/api/images/`,
@@ -24,7 +25,13 @@ export const ENDPOINTS = {
   PENDING_COUNT: `${API_URL}/api/comments/pending-count/`,
   BULK_APPROVE: `${API_URL}/api/comments/bulk_approve/`,
   BULK_REJECT: `${API_URL}/api/comments/bulk_reject/`,
-  PROFILE: `${API_URL}/api/profile/`
+  PROFILE: `${API_URL}/api/profile/`,
+  
+  // Authentication endpoints
+  AUTH_TOKEN: `${API_URL}/api/auth/token/`,
+  AUTH_TOKEN_REFRESH: `${API_URL}/api/auth/token/refresh/`,
+  AUTH_LOGOUT: `${API_URL}/api/auth/logout/`,
+  AUTH_PROFILE: `${API_URL}/api/auth/profile/`
 };
 
 export default ENDPOINTS; 
