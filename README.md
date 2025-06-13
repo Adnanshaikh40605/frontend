@@ -25,10 +25,10 @@ This is the frontend for the Blog CMS project, built with React.
 3. Create a `.env` file in the frontend directory with the following contents:
    ```
    # API URL - Set this to your backend API URL
-   VITE_API_URL=https://web-production-f03ff.up.railway.app
+   VITE_API_URL=https://backend-production-92ae.up.railway.app
    
    # Media URL - Optional, will use API_URL/media/ if not set
-   VITE_MEDIA_URL=https://web-production-f03ff.up.railway.app/media/
+   VITE_MEDIA_URL=https://backend-production-92ae.up.railway.app/media/
    
    # Set to true for production, false for development
    VITE_PRODUCTION=false
