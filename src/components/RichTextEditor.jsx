@@ -596,11 +596,17 @@ const RichTextEditor = ({
   const handlePaste = (e) => {
     e.preventDefault();
     
-    // Get plain text from clipboard
-    const text = e.clipboardData.getData('text/plain');
+    // Check if HTML content is available in the clipboard
+    const htmlContent = e.clipboardData.getData('text/html');
     
-    // Insert at current position
-    document.execCommand('insertText', false, text);
+    if (htmlContent) {
+      // Use HTML content which preserves images and basic formatting
+      document.execCommand('insertHTML', false, htmlContent);
+    } else {
+      // Fallback to plain text if HTML is not available
+      const text = e.clipboardData.getData('text/plain');
+      document.execCommand('insertText', false, text);
+    }
     
     // Update content
     handleChange();
