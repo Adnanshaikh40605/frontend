@@ -513,8 +513,53 @@ const PostFormPage = () => {
     }
   };
   
+  // Add the onImageUpload handler function
+  const handleImageUpload = async (file) => {
+    try {
+      // Create a temporary URL for the image
+      const objectUrl = URL.createObjectURL(file);
+      
+      // In a real implementation, you would upload the file to your server
+      // and return the URL of the uploaded image
+      // For now, we'll just return the temporary URL
+      return objectUrl;
+      
+      // Example of a real implementation:
+      // const formData = new FormData();
+      // formData.append('image', file);
+      // const response = await fetch('/api/upload', {
+      //   method: 'POST',
+      //   body: formData
+      // });
+      // const data = await response.json();
+      // return data.url;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return null;
+    }
+  };
+  
+  // Process content to ensure Lexend font is applied
+  const processContent = (content) => {
+    // Create temporary container to process HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = content;
+    
+    // Apply Lexend font to all text elements
+    const textElements = tempDiv.querySelectorAll('p, h1, h2, h3, h4, h5, h6, span, div, li, td, th');
+    textElements.forEach(el => {
+      if (!el.style.fontFamily || !el.style.fontFamily.includes('Lexend')) {
+        el.style.fontFamily = '"Lexend", sans-serif';
+      }
+    });
+    
+    return tempDiv.innerHTML;
+  };
+  
+  // Handle editor content change with font processing
   const handleEditorChange = (content) => {
-    setPost(prev => ({ ...prev, content }));
+    const processedContent = processContent(content);
+    setPost(prev => ({ ...prev, content: processedContent }));
   };
   
   const handleFeaturedImageChange = (e) => {
@@ -706,32 +751,6 @@ const PostFormPage = () => {
     }
   };
   
-  // Add the onImageUpload handler function
-  const handleImageUpload = async (file) => {
-    try {
-      // Create a temporary URL for the image
-      const objectUrl = URL.createObjectURL(file);
-      
-      // In a real implementation, you would upload the file to your server
-      // and return the URL of the uploaded image
-      // For now, we'll just return the temporary URL
-      return objectUrl;
-      
-      // Example of a real implementation:
-      // const formData = new FormData();
-      // formData.append('image', file);
-      // const response = await fetch('/api/upload', {
-      //   method: 'POST',
-      //   body: formData
-      // });
-      // const data = await response.json();
-      // return data.url;
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      return null;
-    }
-  };
-  
   if (loading) {
     return <p>Loading post data...</p>;
   }
@@ -795,6 +814,7 @@ const PostFormPage = () => {
             value={post.content}
             onChange={handleEditorChange}
             onImageUpload={handleImageUpload}
+            placeholder="Write your blog post content here..."
           />
         </FormGroup>
         

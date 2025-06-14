@@ -84,6 +84,7 @@ const EditorContent = styled.div`
   
   & p {
     margin-bottom: 1rem;
+    font-family: 'Lexend', sans-serif;
   }
   
   & h1, & h2, & h3, & h4 {
@@ -97,6 +98,11 @@ const EditorContent = styled.div`
   & ul, & ol {
     margin-bottom: 1rem;
     padding-left: 2rem;
+    font-family: 'Lexend', sans-serif;
+  }
+  
+  & li {
+    font-family: 'Lexend', sans-serif;
   }
   
   & blockquote {
@@ -104,6 +110,7 @@ const EditorContent = styled.div`
     padding-left: 1rem;
     margin-left: 0;
     color: #6c757d;
+    font-family: 'Lexend', sans-serif;
   }
   
   & img {
@@ -128,6 +135,10 @@ const EditorContent = styled.div`
     padding: 0.2rem 0.4rem;
     border-radius: 3px;
     font-size: 0.875em;
+  }
+  
+  & span, & div, & td, & th {
+    font-family: 'Lexend', sans-serif;
   }
   
   & .resizable-image {
@@ -297,6 +308,9 @@ const RichTextEditor = ({
     if (editorRef.current) {
       editorRef.current.innerHTML = value || '';
       
+      // Apply Lexend font to all elements
+      applyLexendFont();
+      
       // Set placeholder attribute
       if (placeholder) {
         editorRef.current.setAttribute('placeholder', placeholder);
@@ -305,6 +319,18 @@ const RichTextEditor = ({
       updateWordCount();
     }
   }, [editorRef, value, placeholder]);
+  
+  // Function to apply Lexend font to all elements in the editor
+  const applyLexendFont = () => {
+    if (!editorRef.current) return;
+    
+    const elements = editorRef.current.querySelectorAll('p, h1, h2, h3, h4, h5, h6, span, div, li, td, th');
+    elements.forEach(el => {
+      if (!el.style.fontFamily || !el.style.fontFamily.includes('Lexend')) {
+        el.style.fontFamily = '"Lexend", sans-serif';
+      }
+    });
+  };
   
   // Update editor content when value changes externally
   useEffect(() => {
@@ -596,16 +622,51 @@ const RichTextEditor = ({
   const handlePaste = (e) => {
     e.preventDefault();
     
+    // Create temporary container to process HTML
+    const tempDiv = document.createElement('div');
+    
     // Check if HTML content is available in the clipboard
     const htmlContent = e.clipboardData.getData('text/html');
+    const plainText = e.clipboardData.getData('text/plain');
     
     if (htmlContent) {
       // Use HTML content which preserves images and basic formatting
-      document.execCommand('insertHTML', false, htmlContent);
+      tempDiv.innerHTML = htmlContent;
+      
+      // Apply Lexend font to all text elements
+      const textElements = tempDiv.querySelectorAll('p, h1, h2, h3, h4, h5, h6, span, div, li, td, th');
+      textElements.forEach(el => {
+        el.style.fontFamily = '"Lexend", sans-serif';
+      });
+      
+      // Remove unwanted styles but keep basic formatting
+      const allElements = tempDiv.querySelectorAll('*');
+      allElements.forEach(el => {
+        // Keep only essential styles and override font
+        const style = el.style;
+        const fontWeight = style.fontWeight;
+        const fontStyle = style.fontStyle;
+        const textDecoration = style.textDecoration;
+        const color = style.color;
+        
+        // Clear all styles
+        el.removeAttribute('style');
+        
+        // Re-apply only essential styles
+        if (fontWeight) el.style.fontWeight = fontWeight;
+        if (fontStyle) el.style.fontStyle = fontStyle;
+        if (textDecoration) el.style.textDecoration = textDecoration;
+        if (color) el.style.color = color;
+        
+        // Always set Lexend font
+        el.style.fontFamily = '"Lexend", sans-serif';
+      });
+      
+      // Insert the processed HTML
+      document.execCommand('insertHTML', false, tempDiv.innerHTML);
     } else {
       // Fallback to plain text if HTML is not available
-      const text = e.clipboardData.getData('text/plain');
-      document.execCommand('insertText', false, text);
+      document.execCommand('insertText', false, plainText);
     }
     
     // Update content
