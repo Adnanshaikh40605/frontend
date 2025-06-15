@@ -132,9 +132,22 @@ const ImagePreview = styled.div`
   }
 `;
 
-const PreviewImage = styled.img`
+const PreviewImageContainer = styled.div`
+  position: relative;
   width: 100%;
-  height: auto;
+  padding-top: 56.25%; /* 16:9 aspect ratio */
+  overflow: hidden;
+  border-radius: 4px;
+`;
+
+const PreviewImage = styled.img`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
   border-radius: 4px;
   display: block;
 `;
@@ -831,10 +844,12 @@ const PostFormPage = () => {
           {featuredImagePreview && (
             <ImagePreviewContainer>
               <ImagePreview>
-                <PreviewImage 
-                  src={featuredImagePreview} 
-                  alt="Featured preview" 
-                />
+                <PreviewImageContainer>
+                  <PreviewImage 
+                    src={featuredImagePreview} 
+                    alt="Featured preview" 
+                  />
+                </PreviewImageContainer>
                 <RemoveButton onClick={handleRemoveFeaturedImage}>
                   <CloseIcon />
                 </RemoveButton>
@@ -861,10 +876,12 @@ const PostFormPage = () => {
                 {additionalImagePreviews.map((image, index) => (
                   <ImageContainer key={index}>
                     <ImagePreview>
-                      <PreviewImage 
-                        src={image} 
-                        alt={`Preview ${index + 1}`}
-                      />
+                      <PreviewImageContainer>
+                        <PreviewImage 
+                          src={image} 
+                          alt={`Preview ${index + 1}`}
+                        />
+                      </PreviewImageContainer>
                       <RemoveButton onClick={() => handleRemoveAdditionalImage(index)}>
                         <CloseIcon />
                       </RemoveButton>
