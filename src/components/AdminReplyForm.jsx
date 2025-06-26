@@ -28,7 +28,10 @@ const ButtonContainer = styled.div`
   justify-content: flex-end;
 `;
 
-const AdminReplyForm = ({ commentId, existingReply = '', onReplied }) => {
+const AdminReplyForm = ({ comment, existingReply = '', onReplied }) => {
+  // Extract comment ID from either a comment object or direct ID
+  const commentId = comment?.id || comment;
+  
   const [reply, setReply] = useState(existingReply || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -36,12 +39,28 @@ const AdminReplyForm = ({ commentId, existingReply = '', onReplied }) => {
   const handleReply = async () => {
     if (!reply.trim()) return;
     
+    if (!commentId) {
+      console.error('Invalid comment ID:', comment);
+      setError('Invalid comment ID');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     
     try {
+      // Format data for API call - content field with the reply text
+      // admin_reply set to true to flag this as an admin reply
+      const replyContent = reply.trim();
+      const replyData = { 
+        content: replyContent,
+        admin_reply: true // Boolean flag to indicate this is an admin reply
+      };
+      
+      console.log('Sending admin reply:', replyData);
+      
       // Use the reply action endpoint
-      const response = await commentAPI.replyToComment(commentId, { admin_reply: reply });
+      const response = await commentAPI.replyToComment(commentId, replyData);
       
       // Make sure we got a valid response
       if (!response) {
@@ -52,7 +71,8 @@ const AdminReplyForm = ({ commentId, existingReply = '', onReplied }) => {
       
       // Notify parent component about successful reply
       if (onReplied && typeof onReplied === 'function') {
-        onReplied(response.comment || { id: commentId, admin_reply: reply });
+        // Pass the complete response to prevent duplicate API calls
+        onReplied(response);
       }
     } catch (err) {
       console.error('Failed to add reply:', err);

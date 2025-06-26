@@ -452,13 +452,25 @@ export const commentAPI = {
   },
   
   // Get approved comments for a post
-  getApproved: async (postId) => {
+  getApproved: async (postId, options = {}) => {
     try {
       if (!postId) {
         throw new Error('Post ID is required to get approved comments');
       }
       
-      const url = `${ENDPOINTS.COMMENTS}?post=${postId}&approved=true&is_trash=false`;
+      // Build query parameters
+      const params = new URLSearchParams();
+      params.append('post', postId);
+      params.append('approved', 'true');
+      params.append('is_trash', 'false');
+      
+      // Add optional parameters
+      if (options.page) params.append('page', options.page);
+      if (options.limit) params.append('limit', options.limit);
+      if (options.parent_id) params.append('parent_id', options.parent_id);
+      if (options.include_replies) params.append('include_replies', options.include_replies);
+      
+      const url = `${ENDPOINTS.COMMENTS}?${params.toString()}`;
       
       console.log(`Fetching approved comments for post ${postId} from: ${url}`);
       
@@ -468,6 +480,26 @@ export const commentAPI = {
       console.error(`API Error fetching approved comments for post ${postId}:`, error);
       // Return empty results on error
       return { results: [], count: 0, next: null, previous: null };
+    }
+  },
+  
+  // Get replies for a specific comment
+  getReplies: async (commentId, page = 1, limit = 5) => {
+    try {
+      if (!commentId) {
+        throw new Error('Comment ID is required to get replies');
+      }
+      
+      const url = `${ENDPOINTS.COMMENTS}${commentId}/paginated_replies/?page=${page}&limit=${limit}`;
+      
+      console.log(`Fetching replies for comment ${commentId} from: ${url}`);
+      
+      const response = await fetch(url);
+      return handleResponse(response);
+    } catch (error) {
+      console.error(`API Error fetching replies for comment ${commentId}:`, error);
+      // Return empty results on error
+      return { results: [], count: 0, total_pages: 0, current_page: page };
     }
   },
   
@@ -740,8 +772,14 @@ export const commentAPI = {
   // Reply to a comment
   replyToComment: async (id, replyData) => {
     try {
-      // Get headers with authentication token
-      const headers = await getHeaders();
+      // Validate content is not empty
+      const content = replyData.content?.trim() || '';
+      if (!content) {
+        throw new Error('Reply content cannot be empty');
+      }
+      
+      // Get headers with authentication token and include Content-Type
+      const headers = await getHeaders(true); // Set to true to include Content-Type
       
       // Explicitly add authentication token
       const token = getAuthToken();
@@ -749,11 +787,22 @@ export const commentAPI = {
         headers['Authorization'] = `Bearer ${token}`;
       }
       
+      // We've fixed the backend to properly handle admin_reply as a text field
+      // The replyData.admin_reply flag now tells the backend this is an admin reply
+      const dataToSend = {
+        content: content, // The actual reply text content
+        author_name: 'Admin', // Add author name for admin replies
+        approved: true, // Auto-approve admin replies
+        admin_reply: true // Flag to identify this as an admin reply
+      };
+      
+      console.log('Sending reply data:', dataToSend);
+      
       const response = await fetch(`${ENDPOINTS.COMMENTS}${id}/reply/`, {
         method: 'POST',
         headers: headers,
         credentials: 'same-origin',
-        body: JSON.stringify(replyData)
+        body: JSON.stringify(dataToSend)
       });
       return handleResponse(response);
     } catch (error) {

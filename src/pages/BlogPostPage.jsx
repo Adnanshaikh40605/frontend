@@ -588,7 +588,9 @@ const BlogPostPage = () => {
   const [showToc, setShowToc] = useState(false);
   const [tocItems, setTocItems] = useState([]);
   const { blogSettings } = useBlog();
-  const { comments, loading: commentsLoading, fetchComments, submitComment } = usePostComments(post?.id, false);
+  const { comments, loading: commentsLoading, fetchComments, submitComment, hasMore, loadMore } = usePostComments(post?.id, false);
+  const [replyTo, setReplyTo] = useState(null);
+  const commentFormRef = useRef(null);
   
   // Debug loading state
   useEffect(() => {
@@ -923,7 +925,9 @@ const BlogPostPage = () => {
           
           <CommentForm 
             postId={post?.id}
-            onCommentSubmitted={submitComment} 
+            onCommentSubmitted={submitComment}
+            replyTo={replyTo}
+            onCancelReply={() => setReplyTo(null)}
           />
           
           {commentsLoading && comments.length === 0 ? (
@@ -935,8 +939,31 @@ const BlogPostPage = () => {
                   key={comment.id} 
                   comment={comment} 
                   showActionButtons={false}
+                  onReply={(comment) => {
+                    // Set up reply to this comment
+                    setReplyTo(comment);
+                    
+                    // Scroll to comment form
+                    setTimeout(() => {
+                      const formElement = document.querySelector('.comment-form');
+                      if (formElement) {
+                        formElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }
+                    }, 100);
+                  }}
+                  onCommentSubmitted={submitComment}
+                  maxNestingLevel={5}
                 />
               ))}
+              
+              {hasMore && (
+                <LoadMoreButton 
+                  onClick={loadMore}
+                  disabled={commentsLoading}
+                >
+                  {commentsLoading ? 'Loading...' : 'Load More Comments'}
+                </LoadMoreButton>
+              )}
             </CommentsList>
           ) : (
             <Message>No comments yet. Be the first to comment!</Message>

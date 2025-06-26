@@ -317,17 +317,26 @@ const CommentsPage = () => {
   };
   
   // Handle approve comment
-  const handleApproveComment = async (commentId) => {
+  const handleApproveComment = async (comment) => {
     try {
+      // Extract ID if we received a comment object
+      const commentId = comment?.id || comment;
+      
+      if (!commentId) {
+        console.error('Invalid comment ID:', comment);
+        alert('Error: Invalid comment ID');
+        return;
+      }
+      
       await commentAPI.approve(commentId);
       
       // Remove comment from current list if we're looking at pending comments
       if (activeTab === TABS.PENDING) {
-        setComments(comments.filter(comment => comment.id !== commentId));
+        setComments(comments.filter(c => c.id !== commentId));
       } else {
         // Update the comment status in the list
-        setComments(comments.map(comment => 
-          comment.id === commentId ? { ...comment, approved: true } : comment
+        setComments(comments.map(c => 
+          c.id === commentId ? { ...c, approved: true } : c
         ));
       }
       
@@ -340,16 +349,25 @@ const CommentsPage = () => {
   };
   
   // Handle reject/unapprove comment
-  const handleRejectComment = async (commentId) => {
+  const handleRejectComment = async (comment) => {
     try {
+      // Extract ID if we received a comment object
+      const commentId = comment?.id || comment;
+      
+      if (!commentId) {
+        console.error('Invalid comment ID:', comment);
+        alert('Error: Invalid comment ID');
+        return;
+      }
+      
       await commentAPI.reject(commentId);
       
       // Update the current list based on active tab
       if (activeTab === TABS.APPROVED) {
-        setComments(comments.filter(comment => comment.id !== commentId));
+        setComments(comments.filter(c => c.id !== commentId));
       } else if (activeTab === TABS.ALL) {
-        setComments(comments.map(comment => 
-          comment.id === commentId ? { ...comment, approved: false } : comment
+        setComments(comments.map(c => 
+          c.id === commentId ? { ...c, approved: false } : c
         ));
       } else if (activeTab === TABS.PENDING) {
         // Nothing needed here since it stays pending
@@ -364,12 +382,21 @@ const CommentsPage = () => {
   };
   
   // Handle trash comment
-  const handleTrashComment = async (commentId) => {
+  const handleTrashComment = async (comment) => {
     try {
+      // Extract ID if we received a comment object
+      const commentId = comment?.id || comment;
+      
+      if (!commentId) {
+        console.error('Invalid comment ID:', comment);
+        alert('Error: Invalid comment ID');
+        return;
+      }
+      
       await commentAPI.trashComment(commentId);
       
       // Remove from current view since it's now in trash
-      setComments(comments.filter(comment => comment.id !== commentId));
+      setComments(comments.filter(c => c.id !== commentId));
       
       // Use debounced fetch counts
       debouncedFetchCounts();
@@ -380,13 +407,22 @@ const CommentsPage = () => {
   };
   
   // Handle restore from trash
-  const handleRestoreComment = async (commentId) => {
+  const handleRestoreComment = async (comment) => {
     try {
+      // Extract ID if we received a comment object
+      const commentId = comment?.id || comment;
+      
+      if (!commentId) {
+        console.error('Invalid comment ID:', comment);
+        alert('Error: Invalid comment ID');
+        return;
+      }
+      
       await commentAPI.restoreComment(commentId);
       
       // Remove from trash view
       if (activeTab === TABS.TRASH) {
-        setComments(comments.filter(comment => comment.id !== commentId));
+        setComments(comments.filter(c => c.id !== commentId));
       }
       
       // Use debounced fetch counts
@@ -398,13 +434,22 @@ const CommentsPage = () => {
   };
   
   // Handle delete permanently
-  const handleDeleteComment = async (commentId) => {
+  const handleDeleteComment = async (comment) => {
     try {
+      // Extract ID if we received a comment object
+      const commentId = comment?.id || comment;
+      
+      if (!commentId) {
+        console.error('Invalid comment ID:', comment);
+        alert('Error: Invalid comment ID');
+        return;
+      }
+      
       if (window.confirm('Are you sure you want to permanently delete this comment?')) {
         await commentAPI.deleteComment(commentId);
         
         // Remove from any view
-        setComments(comments.filter(comment => comment.id !== commentId));
+        setComments(comments.filter(c => c.id !== commentId));
         
         // Use debounced fetch counts
         debouncedFetchCounts();
@@ -416,10 +461,35 @@ const CommentsPage = () => {
   };
   
   // Handle reply to comment 
-  const handleReplyComment = async (commentId, replyContent) => {
+  const handleReplyComment = async (comment, replyContent) => {
     try {
+      // Check if this is a response from AdminReplyForm with API call already made
+      if (comment && comment.status === 'Reply added successfully' && comment.comment) {
+        // API call was already made by AdminReplyForm, just update the UI
+        const updatedComment = comment.comment;
+        setComments(prevComments => 
+          prevComments.map(c => 
+            c.id === updatedComment.parent 
+              ? { ...c, admin_reply: updatedComment.content }
+              : c
+          )
+        );
+        return;
+      }
+      
+      // If we get here, we need to make the API call ourselves
+      // Extract ID if we received a comment object
+      const commentId = comment?.id || comment;
+      
+      if (!commentId) {
+        console.error('Invalid comment ID:', comment);
+        alert('Error: Invalid comment ID');
+        return;
+      }
+      
       const replyData = {
-        admin_reply: replyContent
+        content: replyContent, // Required field
+        admin_reply: true // Boolean flag to indicate this is an admin reply
       };
       
       const response = await commentAPI.replyToComment(commentId, replyData);
@@ -427,10 +497,10 @@ const CommentsPage = () => {
       // Update comment in list
       if (response && response.comment) {
         setComments(prevComments => 
-          prevComments.map(comment => 
-            comment.id === commentId 
-              ? { ...comment, admin_reply: replyContent }
-              : comment
+          prevComments.map(c => 
+            c.id === commentId 
+              ? { ...c, admin_reply: replyContent }
+              : c
           )
         );
       }

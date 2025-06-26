@@ -20,18 +20,22 @@ export const usePostComments = (postId, autoFetch = true) => {
   /**
    * Fetch approved comments for the post
    */
-  const fetchComments = useCallback(async (pageNumber = 1, append = false) => {
-    if (!postId) return;
+  const fetchComments = useCallback(async (postIdToUse = postId, pageNumber = 1, append = false) => {
+    if (!postIdToUse) return;
 
     try {
       setLoading(true);
       setError(null);
       
-      console.log(`Fetching approved comments for post ${postId} (page ${pageNumber})`);
+      console.log(`Fetching approved comments for post ${postIdToUse} (page ${pageNumber})`);
       
-      // Only fetch approved comments for public display using the getApproved helper
-      // This ensures that rejected comments are not included
-      const response = await commentAPI.getApproved(postId);
+      // Only fetch root comments (no parent) for the initial load
+      // The nested comments will be included in the response with proper nesting
+      const response = await commentAPI.getApproved(postIdToUse, {
+        page: pageNumber,
+        parent_id: 'null', // Only get root comments
+        include_replies: true // Include nested replies in the response
+      });
       
       console.log('Approved comments API response:', response);
       
@@ -53,7 +57,7 @@ export const usePostComments = (postId, autoFetch = true) => {
       
       return results;
     } catch (err) {
-      console.error(`Error fetching approved comments for post ${postId}:`, err);
+      console.error(`Error fetching approved comments for post ${postIdToUse}:`, err);
       setError('Failed to load comments. Please try again.');
       return [];
     } finally {
@@ -67,9 +71,9 @@ export const usePostComments = (postId, autoFetch = true) => {
   const loadMore = useCallback(async () => {
     if (!loading && hasMore) {
       const nextPage = page + 1;
-      await fetchComments(nextPage, true);
+      await fetchComments(postId, nextPage, true);
     }
-  }, [fetchComments, loading, hasMore, page]);
+  }, [fetchComments, loading, hasMore, page, postId]);
 
   /**
    * Submit a new comment or reply
@@ -97,9 +101,11 @@ export const usePostComments = (postId, autoFetch = true) => {
       console.log('Comment submitted successfully:', result);
       
       // If it's a new top-level comment that's pre-approved, add it to the list
-      if (result.approved) {
+      if (result.approved && !result.parent) {
         setComments(currentComments => [result, ...currentComments]);
-      }
+      } 
+      // If it's a reply and pre-approved, we don't add it to the list
+      // since it would disrupt the hierarchy - it will be loaded on refresh
       
       // Mark as submitted
       setCommentSubmitted(true);
@@ -114,10 +120,64 @@ export const usePostComments = (postId, autoFetch = true) => {
     }
   }, [postId]);
 
+  /**
+   * Fetch replies for a specific comment
+   */
+  const fetchReplies = useCallback(async (commentId, page = 1, limit = 5) => {
+    if (!commentId) return [];
+    
+    try {
+      console.log(`Fetching replies for comment ${commentId} (page ${page})`);
+      
+      const response = await commentAPI.getReplies(commentId, page, limit);
+      
+      console.log('Replies API response:', response);
+      
+      return response.results || [];
+    } catch (err) {
+      console.error(`Error fetching replies for comment ${commentId}:`, err);
+      return [];
+    }
+  }, []);
+
+  /**
+   * Update a comment in the comments array (e.g., after adding a reply)
+   */
+  const updateComment = useCallback((commentId, updatedComment) => {
+    setComments(prevComments => {
+      // Create a deep copy to avoid mutation
+      const newComments = JSON.parse(JSON.stringify(prevComments));
+      
+      // Helper function to recursively find and update a comment
+      const findAndUpdateComment = (comments, id, update) => {
+        for (let i = 0; i < comments.length; i++) {
+          if (comments[i].id === id) {
+            // Found the comment, update it
+            comments[i] = { ...comments[i], ...update };
+            return true;
+          }
+          
+          // Check in replies if they exist
+          if (comments[i].replies && comments[i].replies.length > 0) {
+            if (findAndUpdateComment(comments[i].replies, id, update)) {
+              return true;
+            }
+          }
+        }
+        return false;
+      };
+      
+      // Try to find and update the comment
+      findAndUpdateComment(newComments, commentId, updatedComment);
+      
+      return newComments;
+    });
+  }, []);
+
   // Auto-fetch comments when postId changes
   useEffect(() => {
     if (autoFetch && postId && !alreadyFetched.current) {
-      fetchComments(1, false);
+      fetchComments(postId, 1, false);
       alreadyFetched.current = true;
     }
   }, [autoFetch, fetchComments, postId]);
@@ -133,6 +193,8 @@ export const usePostComments = (postId, autoFetch = true) => {
     loadMore,
     submitComment,
     setCommentSubmitted,
+    fetchReplies,
+    updateComment
   };
 };
 

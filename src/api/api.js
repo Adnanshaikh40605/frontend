@@ -455,12 +455,23 @@ export const commentAPI = {
   },
   
   // Get all comments (with optional post ID filter)
-  getAll: async (postId = null) => {
+  getAll: async (postId = null, includeReplies = false) => {
     try {
       let url = ENDPOINTS.COMMENTS;
+      const params = new URLSearchParams();
+      
       if (postId) {
-        url += `?post=${postId}`;
+        params.append('post', postId);
       }
+      
+      if (includeReplies) {
+        params.append('include_replies', 'true');
+      }
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+      
       const response = await fetch(url);
       return handleResponse(response);
     } catch (error) {
@@ -503,7 +514,7 @@ export const commentAPI = {
         throw new Error('Post ID is required to get approved comments');
       }
       
-      const url = `${ENDPOINTS.COMMENTS}?post=${postId}&approved=true&is_trash=false`;
+      const url = `${ENDPOINTS.COMMENTS}?post=${postId}&approved=true&is_trash=false&include_replies=true`;
       
       const response = await fetch(url);
       const data = await handleResponse(response);
@@ -519,6 +530,40 @@ export const commentAPI = {
       console.error(`API Error fetching approved comments for post ${postId}:`, error);
       // Return empty results on error
       return { results: [], count: 0, next: null, previous: null };
+    }
+  },
+  
+  // Get root comments (no parent) for a post
+  getRootComments: async (postId) => {
+    try {
+      if (!postId) {
+        throw new Error('Post ID is required to get root comments');
+      }
+      
+      const url = `${ENDPOINTS.COMMENTS}?post=${postId}&approved=true&is_trash=false&parent_id=null`;
+      
+      const response = await fetch(url);
+      return handleResponse(response);
+    } catch (error) {
+      console.error(`API Error fetching root comments for post ${postId}:`, error);
+      throw error;
+    }
+  },
+  
+  // Get replies for a specific comment
+  getReplies: async (commentId) => {
+    try {
+      if (!commentId) {
+        throw new Error('Comment ID is required to get replies');
+      }
+      
+      const url = `${ENDPOINTS.COMMENTS}${commentId}/replies/`;
+      
+      const response = await fetch(url);
+      return handleResponse(response);
+    } catch (error) {
+      console.error(`API Error fetching replies for comment ${commentId}:`, error);
+      throw error;
     }
   },
   
@@ -540,6 +585,11 @@ export const commentAPI = {
         }
       });
       
+      // Ensure parent_id is properly set if this is a reply
+      if (commentData.parent) {
+        formData.append('parent', commentData.parent);
+      }
+      
       const response = await fetch(ENDPOINTS.COMMENTS, {
         method: 'POST',
         headers: getHeaders(false), // Don't include Content-Type for file uploads
@@ -548,7 +598,28 @@ export const commentAPI = {
       });
       return handleResponse(response);
     } catch (error) {
-      console.error('API Error creating comment:', error);
+      console.error('Error creating comment:', error);
+      throw error;
+    }
+  },
+  
+  // Create a reply to a comment
+  createReply: async (parentId, replyData) => {
+    try {
+      if (!parentId) {
+        throw new Error('Parent comment ID is required to create a reply');
+      }
+      
+      // Add parent_id to the reply data
+      const commentData = {
+        ...replyData,
+        parent: parentId
+      };
+      
+      // Use the regular create method
+      return await commentAPI.create(commentData);
+    } catch (error) {
+      console.error(`API Error creating reply to comment ${parentId}:`, error);
       throw error;
     }
   },
