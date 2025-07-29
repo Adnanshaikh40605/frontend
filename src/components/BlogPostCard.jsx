@@ -235,26 +235,20 @@ const BlogPostCard = ({ post }) => {
     ? mediaAPI.getImageUrl(post.featured_image)
     : null;
   
-  // Create a clean excerpt from the post content
-  const createExcerpt = (content, maxLength = 150) => {
-    // Remove HTML tags
-    const plainText = content.replace(/<[^>]+>/g, ' ');
-    
-    // Truncate to max length
-    if (plainText.length <= maxLength) return plainText;
-    
-    // Find the last space before maxLength
-    const excerpt = plainText.substring(0, maxLength);
-    const lastSpaceIndex = excerpt.lastIndexOf(' ');
-    
-    if (lastSpaceIndex > 0) {
-      return excerpt.substring(0, lastSpaceIndex) + '...';
+  // Get excerpt - use API excerpt or create from content
+  const getExcerpt = () => {
+    if (post.excerpt) {
+      return post.excerpt;
     }
-    
-    return excerpt + '...';
+    if (post.content) {
+      // Remove HTML tags and create excerpt
+      const plainText = post.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      return plainText.length > 150 ? plainText.substring(0, 150) + '...' : plainText;
+    }
+    return '';
   };
   
-  const excerpt = post.content ? createExcerpt(post.content) : '';
+  const excerpt = getExcerpt();
   const formattedDate = formatDate(post.created_at);
   
   // Get author initial for avatar
@@ -267,16 +261,19 @@ const BlogPostCard = ({ post }) => {
   
   // Get category (if available)
   const getCategory = () => {
-    if (post.category) {
+    if (post.category && post.category.name) {
+      return post.category.name;
+    }
+    if (post.category && typeof post.category === 'string') {
       return post.category;
     }
     return 'Blog';
   };
   
-  // Get read time
+  // Get read time - use API read_time or calculate
   const getReadTime = () => {
     if (post.read_time) {
-      return post.read_time;
+      return `${post.read_time} min read`;
     }
     // Calculate approximate read time based on content length
     if (post.content) {

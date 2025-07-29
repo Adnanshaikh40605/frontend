@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import RichTextEditor from '../components/RichTextEditor';
 import Button from '../components/Button';
-import { postAPI } from '../api/apiService';
+import { postAPI, categoriesAPI } from '../api/apiService';
 import slugify from '../utils/slugify';
 import { clearPostCache } from '../pages/BlogPostPage';
 import CloseIcon from '@mui/icons-material/Close';
@@ -365,8 +365,10 @@ const PostFormPage = () => {
     title: '',
     slug: '',
     content: '',
+    excerpt: '',
     published: true,
     featured: false,
+    category: null,
   });
   const [featuredImage, setFeaturedImage] = useState(null);
   const [featuredImagePreview, setFeaturedImagePreview] = useState('');
@@ -383,6 +385,8 @@ const PostFormPage = () => {
     message: ''
   });
   const [postIdentifier, setPostIdentifier] = useState(slug || id);
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
   
   useEffect(() => {
     // If slug or id is provided, fetch the post data for editing
@@ -390,7 +394,33 @@ const PostFormPage = () => {
       setIsEdit(true);
       fetchPost();
     }
+    
+    // Always fetch categories
+    fetchCategories();
   }, [slug, id]);
+  
+  const fetchCategories = async () => {
+    try {
+      setCategoriesLoading(true);
+      const response = await categoriesAPI.getAll();
+      
+      if (response && response.results) {
+        setCategories(response.results);
+      } else if (response && Array.isArray(response)) {
+        setCategories(response);
+      }
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+      // Set some default categories as fallback
+      setCategories([
+        { id: 1, name: 'Technology', slug: 'technology' },
+        { id: 2, name: 'Web Development', slug: 'web-development' },
+        { id: 3, name: 'Programming', slug: 'programming' }
+      ]);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
   
   const fetchPost = async () => {
     try {
@@ -416,6 +446,7 @@ const PostFormPage = () => {
           title: data.title || '',
           slug: data.slug || '',
           content: data.content || '',
+          excerpt: data.excerpt || '',
           published: data.published || true,
           featured: data.featured || false,
         });
@@ -665,6 +696,7 @@ const PostFormPage = () => {
         title: post.title,
         slug: post.slug,
         content: post.content,
+        excerpt: post.excerpt,
         published: post.published,
         featured: post.featured
       };
@@ -819,6 +851,71 @@ const PostFormPage = () => {
               {slugValidation.message}
             </SlugValidationMessage>
           </SlugInputGroup>
+        </FormGroup>
+        
+        <FormGroup>
+          <Label htmlFor="category">Category</Label>
+          <select
+            id="category"
+            name="category"
+            value={post.category || ''}
+            onChange={(e) => setPost(prev => ({ ...prev, category: e.target.value || null }))}
+            style={{
+              padding: '0.9rem',
+              border: '1px solid #dce0e5',
+              borderRadius: '6px',
+              fontSize: '1rem',
+              backgroundColor: 'white',
+              cursor: 'pointer',
+              transition: 'border-color 0.2s, box-shadow 0.2s'
+            }}
+            disabled={categoriesLoading}
+          >
+            <option value="">Select a category (optional)</option>
+            {categories.map(category => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+          {categoriesLoading && (
+            <div style={{ fontSize: '0.875rem', color: '#6c757d', marginTop: '0.5rem' }}>
+              Loading categories...
+            </div>
+          )}
+        </FormGroup>
+        
+        <FormGroup>
+          <Label htmlFor="excerpt">Excerpt (Optional)</Label>
+          <textarea
+            id="excerpt"
+            name="excerpt"
+            value={post.excerpt}
+            onChange={handleChange}
+            placeholder="Enter a brief description of your post (max 300 characters). If left blank, it will be auto-generated from content."
+            maxLength={300}
+            rows={3}
+            style={{
+              padding: '0.9rem',
+              border: '1px solid #dce0e5',
+              borderRadius: '6px',
+              fontSize: '1rem',
+              fontFamily: 'inherit',
+              resize: 'vertical',
+              transition: 'border-color 0.2s, box-shadow 0.2s'
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = '#80bdff';
+              e.target.style.boxShadow = '0 0 0 2px rgba(0, 123, 255, 0.25)';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '#dce0e5';
+              e.target.style.boxShadow = 'none';
+            }}
+          />
+          <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.5rem', textAlign: 'right' }}>
+            {post.excerpt.length}/300 characters
+          </div>
         </FormGroup>
         
         <FormGroup>

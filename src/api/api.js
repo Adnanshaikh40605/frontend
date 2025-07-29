@@ -87,7 +87,10 @@ const mockPosts = [
   {
     id: 1,
     title: "Sample Blog Post 1",
+    slug: "sample-blog-post-1",
     content: "<p>This is a sample blog post for development.</p>",
+    excerpt: "This is a sample blog post for development.",
+    read_time: 2,
     featured_image: null,
     published: true,
     created_at: new Date().toISOString(),
@@ -97,7 +100,10 @@ const mockPosts = [
   {
     id: 2,
     title: "Sample Blog Post 2",
+    slug: "sample-blog-post-2",
     content: "<p>This is another sample blog post for development.</p>",
+    excerpt: "This is another sample blog post for development.",
+    read_time: 3,
     featured_image: null,
     published: true,
     created_at: new Date().toISOString(),

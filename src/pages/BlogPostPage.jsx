@@ -735,18 +735,24 @@ const BlogPostPage = () => {
     };
   }, [slug, navigate, fetchComments, location.state]);
 
-  // Placeholder for related posts function
+  // Get related posts function
   const getRelatedPosts = async (currentPost) => {
     try {
-      // In a real implementation, you'd fetch related posts based on tags, category, etc.
-      // For now, we'll return empty array or mock data
-      if (currentPost && currentPost.id) {
-        // This is just a placeholder - you would implement real logic here
-        console.log(`Finding related posts for: ${currentPost.title}`);
+      if (currentPost && currentPost.slug) {
+        console.log(`Fetching related posts for: ${currentPost.title} (slug: ${currentPost.slug})`);
+        
+        const response = await postAPI.getRelatedPosts(currentPost.slug, 4);
+        
+        if (response && response.results) {
+          console.log(`Found ${response.results.length} related posts`);
+          setRelatedPosts(response.results);
+          return response.results;
+        }
       }
       return []; 
     } catch (error) {
       console.error('Error getting related posts:', error);
+      setRelatedPosts([]);
       return [];
     }
   };

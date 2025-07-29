@@ -2,7 +2,7 @@
 // This file maintains backward compatibility with existing imports
 
 // Export from apiService.js
-export { mediaAPI, ckEditorAPI, postAPI, commentAPI } from './apiService';
+export { mediaAPI, ckEditorAPI, postAPI, commentAPI, categoriesAPI } from './apiService';
 
 // Export from apiEndpoints.js
 export { ENDPOINTS, MEDIA_URL, API_URL } from './apiEndpoints';

@@ -431,6 +431,34 @@ export const postAPI = {
       console.error(`API Error uploading image for post ${id}:`, error);
       throw error;
     }
+  },
+  
+  // Get related posts for a specific post
+  getRelatedPosts: async (slug, limit = 4) => {
+    try {
+      const params = new URLSearchParams();
+      if (limit) {
+        params.append('limit', limit);
+      }
+      
+      const url = `${ENDPOINTS.POSTS}${slug}/related/${params.toString() ? `?${params.toString()}` : ''}`;
+      
+      if (isDevelopment) {
+        return handleApiWithFallback(
+          async () => {
+            const response = await fetch(url);
+            return handleResponse(response);
+          },
+          { results: [], count: 0 }
+        );
+      } else {
+        const response = await fetch(url);
+        return handleResponse(response);
+      }
+    } catch (error) {
+      console.error(`API Error fetching related posts for ${slug}:`, error);
+      throw error;
+    }
   }
 };
 
@@ -810,4 +838,72 @@ export const commentAPI = {
       throw error;
     }
   },
+};
+
+// Categories API functions
+export const categoriesAPI = {
+  // Get all categories
+  getAll: async () => {
+    try {
+      const url = ENDPOINTS.CATEGORIES;
+      
+      if (isDevelopment) {
+        return handleApiWithFallback(
+          async () => {
+            const response = await fetch(url);
+            return handleResponse(response);
+          },
+          { 
+            results: [
+              { id: 1, name: 'Technology', slug: 'technology', description: 'Posts about technology, programming, and software development', color: '#007bff', post_count: 0 },
+              { id: 2, name: 'Web Development', slug: 'web-development', description: 'Frontend and backend web development tutorials and tips', color: '#28a745', post_count: 0 },
+              { id: 3, name: 'Python', slug: 'python', description: 'Python programming language tutorials and best practices', color: '#ffc107', post_count: 0 },
+              { id: 4, name: 'JavaScript', slug: 'javascript', description: 'JavaScript programming, frameworks, and libraries', color: '#fd7e14', post_count: 0 },
+              { id: 5, name: 'React', slug: 'react', description: 'React.js tutorials, components, and best practices', color: '#20c997', post_count: 0 },
+              { id: 6, name: 'Django', slug: 'django', description: 'Django framework tutorials and development tips', color: '#6f42c1', post_count: 0 }
+            ], 
+            count: 6 
+          }
+        );
+      } else {
+        const response = await fetch(url);
+        return handleResponse(response);
+      }
+    } catch (error) {
+      console.error('API Error fetching categories:', error);
+      throw error;
+    }
+  },
+  
+  // Get category by slug
+  getBySlug: async (slug) => {
+    try {
+      const url = `${ENDPOINTS.CATEGORIES}${slug}/`;
+      
+      if (isDevelopment) {
+        return handleApiWithFallback(
+          async () => {
+            const response = await fetch(url);
+            return handleResponse(response);
+          },
+          {
+            id: 1,
+            name: 'Technology',
+            slug: 'technology',
+            description: 'Posts about technology, programming, and software development',
+            color: '#007bff',
+            post_count: 0,
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: '2024-01-01T00:00:00Z'
+          }
+        );
+      } else {
+        const response = await fetch(url);
+        return handleResponse(response);
+      }
+    } catch (error) {
+      console.error(`API Error fetching category ${slug}:`, error);
+      throw error;
+    }
+  }
 };

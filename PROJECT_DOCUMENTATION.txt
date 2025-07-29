@@ -6,7 +6,7 @@ This is a full-stack blog content management system (CMS) built with React for t
 ## Project Structure
 
 ### Frontend (React)
-The frontend is organized in a modular structure:
+The frontend is organized in a modular structure:lorem
 
 ```
 frontend/
