@@ -538,6 +538,7 @@ const PostFormPage = () => {
           excerpt: data.excerpt || '',
           published: data.published || true,
           featured: data.featured || false,
+          category: data.category ? data.category.id : null,
         });
         
         if (data.featured_image) {
@@ -834,7 +835,8 @@ const PostFormPage = () => {
         content: post.content,
         excerpt: post.excerpt,
         published: post.published,
-        featured: post.featured
+        featured: post.featured,
+        category: post.category // Explicitly include category field
       };
       
       // Add featured image if present
