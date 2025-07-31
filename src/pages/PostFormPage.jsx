@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import RichTextEditor from '../components/RichTextEditor';
 import Button from '../components/Button';
+import CategoryModal from '../components/CategoryModal';
 import { postAPI, categoriesAPI } from '../api/apiService';
 import slugify from '../utils/slugify';
 import { clearPostCache } from '../pages/BlogPostPage';
@@ -358,6 +359,92 @@ const SlugInputWithValidation = styled(Input)`
   }
 `;
 
+// Category Selection Styles
+const CategorySelectionContainer = styled.div`
+  display: flex;
+  gap: 0.75rem;
+  align-items: stretch;
+`;
+
+const CategorySelect = styled.select`
+  flex: 1;
+  padding: 0.9rem;
+  border: 1px solid #dce0e5;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: inherit;
+  background-color: white;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: #80bdff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  }
+
+  &:disabled {
+    background-color: #f8f9fa;
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+`;
+
+const AddCategoryButton = styled.button`
+  padding: 0.9rem 1.2rem;
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 100px;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #0056b3, #004085);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+`;
+
+const CategoryHelpText = styled.div`
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin-top: 0.5rem;
+  font-style: italic;
+`;
+
+const SmallSpinner = styled.span`
+  width: 14px;
+  height: 14px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
 const PostFormPage = () => {
   const { slug, id } = useParams();
   const navigate = useNavigate();
@@ -387,6 +474,8 @@ const PostFormPage = () => {
   const [postIdentifier, setPostIdentifier] = useState(slug || id);
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [loadingCategories, setLoadingCategories] = useState(false);
   
   useEffect(() => {
     // If slug or id is provided, fetch the post data for editing
@@ -487,7 +576,10 @@ const PostFormPage = () => {
         trim: true          // Trim leading/trailing spaces
       });
       
-      setPost(prev => ({ ...prev, slug: generatedSlug }));
+      // Truncate slug to fit database constraints (max 250 characters)
+      const truncatedSlug = generatedSlug.substring(0, 250);
+      
+      setPost(prev => ({ ...prev, slug: truncatedSlug }));
     }
   };
   
@@ -604,6 +696,12 @@ const PostFormPage = () => {
   const handleEditorChange = (content) => {
     const processedContent = processContent(content);
     setPost(prev => ({ ...prev, content: processedContent }));
+    
+    // Clear any success message that might be showing
+    // This prevents "Post updated successfully" from showing when only editing content
+    if (success) {
+      setSuccess('');
+    }
   };
   
   const handleFeaturedImageChange = (e) => {
@@ -649,6 +747,44 @@ const PostFormPage = () => {
   const handleRemoveAdditionalImage = (index) => {
     setAdditionalImages(prev => prev.filter((_, i) => i !== index));
     setAdditionalImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleCategoryCreated = async (categoryData) => {
+    try {
+      setLoadingCategories(true);
+      
+      // Create the category via API
+      const newCategory = await categoriesAPI.create(categoryData);
+      
+      // Add the new category to the list
+      setCategories(prev => [...prev, newCategory]);
+      
+      // Automatically select the new category
+      setPost(prev => ({
+        ...prev,
+        category: newCategory.id
+      }));
+      
+      // Show success message
+      setSuccess(`Category "${newCategory.name}" created successfully!`);
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(''), 3000);
+      
+    } catch (error) {
+      console.error('Error creating category:', error);
+      
+      // Handle specific error cases
+      if (error.message && error.message.includes('already exists')) {
+        throw new Error('A category with this name already exists');
+      } else if (error.message && error.message.includes('authentication')) {
+        throw new Error('Authentication required. Please log in again.');
+      } else {
+        throw new Error('Failed to create category. Please try again.');
+      }
+    } finally {
+      setLoadingCategories(false);
+    }
   };
   
   const validate = () => {
@@ -830,7 +966,11 @@ const PostFormPage = () => {
             value={post.title}
             onChange={handleChange}
             placeholder="Enter post title"
+            maxLength={200}
           />
+          <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.5rem', textAlign: 'right' }}>
+            {post.title.length}/200 characters
+          </div>
         </FormGroup>
         
         <FormGroup>
@@ -843,6 +983,7 @@ const PostFormPage = () => {
               value={post.slug}
               onChange={handleSlugChange}
               placeholder="Enter post slug"
+              maxLength={250}
               $touched={slugEdited}
               $isValid={slugValidation.isValid}
               $showValidation={slugEdited}
@@ -851,33 +992,44 @@ const PostFormPage = () => {
               {slugValidation.message}
             </SlugValidationMessage>
           </SlugInputGroup>
+          <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.5rem', textAlign: 'right' }}>
+            {post.slug.length}/250 characters
+          </div>
         </FormGroup>
         
         <FormGroup>
           <Label htmlFor="category">Category</Label>
-          <select
-            id="category"
-            name="category"
-            value={post.category || ''}
-            onChange={(e) => setPost(prev => ({ ...prev, category: e.target.value || null }))}
-            style={{
-              padding: '0.9rem',
-              border: '1px solid #dce0e5',
-              borderRadius: '6px',
-              fontSize: '1rem',
-              backgroundColor: 'white',
-              cursor: 'pointer',
-              transition: 'border-color 0.2s, box-shadow 0.2s'
-            }}
-            disabled={categoriesLoading}
-          >
-            <option value="">Select a category (optional)</option>
-            {categories.map(category => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
+          <CategorySelectionContainer>
+            <CategorySelect
+              id="category"
+              name="category"
+              value={post.category || ''}
+              onChange={(e) => setPost(prev => ({ ...prev, category: e.target.value || null }))}
+              disabled={categoriesLoading || loadingCategories}
+            >
+              <option value="">Select a category (optional)</option>
+              {categories.map(category => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </CategorySelect>
+            <AddCategoryButton
+              type="button"
+              onClick={() => setShowCategoryModal(true)}
+              disabled={loadingCategories}
+              title="Create a new category"
+            >
+              {loadingCategories ? (
+                <SmallSpinner />
+              ) : (
+                <>+ Add New</>  
+              )}
+            </AddCategoryButton>
+          </CategorySelectionContainer>
+          <CategoryHelpText>
+            Can't find the right category? Create a new one!
+          </CategoryHelpText>
           {categoriesLoading && (
             <div style={{ fontSize: '0.875rem', color: '#6c757d', marginTop: '0.5rem' }}>
               Loading categories...
@@ -1032,6 +1184,14 @@ const PostFormPage = () => {
           </StyledButton>
         </ButtonContainer>
       </Form>
+      
+      {/* Category Creation Modal */}
+      <CategoryModal
+        isOpen={showCategoryModal}
+        onClose={() => setShowCategoryModal(false)}
+        onCategoryCreated={handleCategoryCreated}
+        existingCategories={categories}
+      />
     </Container>
   );
 };

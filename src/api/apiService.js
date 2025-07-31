@@ -874,6 +874,83 @@ export const categoriesAPI = {
       throw error;
     }
   },
+
+  // Create a new category
+  create: async (categoryData) => {
+    try {
+      // Get headers with authentication token
+      const headers = await getHeaders(true); // Include Content-Type for JSON
+      
+      // Explicitly add authentication token
+      const token = getAuthToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(ENDPOINTS.CATEGORIES, {
+        method: 'POST',
+        headers: headers,
+        credentials: 'same-origin',
+        body: JSON.stringify(categoryData)
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      console.error('API Error creating category:', error);
+      throw error;
+    }
+  },
+
+  // Update an existing category
+  update: async (id, categoryData) => {
+    try {
+      // Get headers with authentication token
+      const headers = await getHeaders(true); // Include Content-Type for JSON
+      
+      // Explicitly add authentication token
+      const token = getAuthToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${ENDPOINTS.CATEGORIES}${id}/`, {
+        method: 'PATCH',
+        headers: headers,
+        credentials: 'same-origin',
+        body: JSON.stringify(categoryData)
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      console.error(`API Error updating category ${id}:`, error);
+      throw error;
+    }
+  },
+
+  // Delete a category
+  delete: async (id) => {
+    try {
+      // Get headers with authentication token
+      const headers = await getHeaders();
+      
+      // Explicitly add authentication token
+      const token = getAuthToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${ENDPOINTS.CATEGORIES}${id}/`, {
+        method: 'DELETE',
+        headers: headers,
+        credentials: 'same-origin'
+      });
+
+      return response.status === 204; // Returns true if successfully deleted
+    } catch (error) {
+      console.error(`API Error deleting category ${id}:`, error);
+      throw error;
+    }
+  },
   
   // Get category by slug
   getBySlug: async (slug) => {
