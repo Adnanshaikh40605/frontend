@@ -48,13 +48,15 @@ export const CommentProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      // Use the new getAllForPost API method
+      // Use the new getAllForPost API method - now returns only top-level comments
       const data = await commentAPI.getAllForPost(postId);
       console.log('Fetched comments data:', data);
       
-      // The API returns structured data with approved and pending arrays
+      // The API returns structured data with approved and pending arrays (top-level only)
       const approvedComments = Array.isArray(data?.approved) ? data.approved : [];
       const pendingCommentsList = Array.isArray(data?.pending) ? data.pending : [];
+      
+      console.log(`Loaded ${approvedComments.length} approved top-level comments and ${pendingCommentsList.length} pending top-level comments`);
       
       // Set approved comments
       if (append && page > 1) {

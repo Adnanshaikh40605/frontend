@@ -284,7 +284,7 @@ const Comment = ({
     }
   };
   
-  // Function to load more replies
+  // Function to load more replies (if pagination is needed for replies)
   const loadMoreReplies = async () => {
     if (loadingMoreReplies || !hasMoreReplies) return;
     
@@ -292,7 +292,7 @@ const Comment = ({
       setLoadingMoreReplies(true);
       const nextPage = page + 1;
       
-      // Make API call to get more replies
+      // Make API call to get more replies using the updated API
       const response = await axios.get(`/api/comments/${currentComment.id}/paginated_replies/?page=${nextPage}&limit=5&max_depth=2`);
       
       if (response.data && response.data.results) {

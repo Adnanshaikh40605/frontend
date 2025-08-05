@@ -27,14 +27,12 @@ export const usePostComments = (postId, autoFetch = true) => {
       setLoading(true);
       setError(null);
       
-      console.log(`Fetching approved comments for post ${postIdToUse} (page ${pageNumber})`);
+      console.log(`Fetching approved top-level comments for post ${postIdToUse} (page ${pageNumber})`);
       
-      // Only fetch root comments (no parent) for the initial load
-      // The nested comments will be included in the response with proper nesting
+      // Backend now automatically returns only top-level comments with nested replies
       const response = await commentAPI.getApproved(postIdToUse, {
         page: pageNumber,
-        parent_id: 'null', // Only get root comments
-        include_replies: true // Include nested replies in the response
+        limit: 10 // Set a reasonable limit for pagination
       });
       
       console.log('Approved comments API response:', response);
@@ -104,8 +102,21 @@ export const usePostComments = (postId, autoFetch = true) => {
       if (result.approved && !result.parent) {
         setComments(currentComments => [result, ...currentComments]);
       } 
-      // If it's a reply and pre-approved, we don't add it to the list
-      // since it would disrupt the hierarchy - it will be loaded on refresh
+      // If it's a reply, we need to update the parent comment's replies array
+      else if (result.parent && result.approved) {
+        setComments(currentComments => {
+          return currentComments.map(comment => {
+            if (comment.id === result.parent) {
+              return {
+                ...comment,
+                replies: [...(comment.replies || []), result],
+                reply_count: (comment.reply_count || 0) + 1
+              };
+            }
+            return comment;
+          });
+        });
+      }
       
       // Mark as submitted
       setCommentSubmitted(true);

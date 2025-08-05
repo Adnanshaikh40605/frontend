@@ -279,9 +279,9 @@ const CommentsPage = () => {
           params.is_trash = false;
         }
         
-        // Use the API service to fetch comments
-        const responseData = await commentAPI.getFilteredComments(params);
-        console.log('CommentsPage - Comments response:', responseData);
+        // Use the admin API service to fetch ALL comments including replies
+        const responseData = await commentAPI.getAdminComments(params);
+        console.log('CommentsPage - Admin comments response:', responseData);
         setDebug(responseData);
         
         // Handle pagination data
