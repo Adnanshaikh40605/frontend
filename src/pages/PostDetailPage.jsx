@@ -478,7 +478,7 @@ const PostDetailPage = () => {
       <SEO 
         title={post.title}
         description={plainTextExcerpt}
-        image={post.featured_image}
+        image={post.featured_image_url || post.featured_image}
         url={currentUrl}
         published={post.created_at}
         modified={post.updated_at}
@@ -507,9 +507,9 @@ const PostDetailPage = () => {
         </ButtonGroup>
       </HeaderContainer>
       
-      {post.featured_image && (
+      {(post.featured_image_url || post.featured_image) && (
         <FeaturedImage 
-          src={post.featured_image} 
+          src={post.featured_image_url || post.featured_image} 
           alt={post.title}
           onError={(e) => {
             e.target.src = placeholderImage;

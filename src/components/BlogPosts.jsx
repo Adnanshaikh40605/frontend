@@ -51,9 +51,9 @@ const BlogPosts = () => {
         <div className="posts-grid">
           {posts.map((post) => (
             <div key={post.id} className="post-card">
-              {post.featured_image && (
+              {(post.featured_image_url || post.featured_image) && (
                 <img 
-                  src={mediaAPI.getImageUrl(post.featured_image)} 
+                  src={post.featured_image_url || mediaAPI.getImageUrl(post.featured_image)} 
                   alt={post.title} 
                   className="featured-image"
                 />

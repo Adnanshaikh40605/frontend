@@ -505,9 +505,9 @@ const BlogListPage = () => {
           {filteredPosts.map(post => (
             <BlogPost key={post.id}>
               <FeaturedImageContainer>
-                {post.featured_image && (
+                {(post.featured_image_url || post.featured_image) && (
                   <FeaturedImage 
-                    src={post.featured_image} 
+                    src={post.featured_image_url || post.featured_image} 
                     alt={post.title}
                     loading="lazy"
                     onError={(e) => {

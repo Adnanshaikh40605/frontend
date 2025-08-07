@@ -902,9 +902,9 @@ const BlogPostPage = () => {
             <RelatedPostsGrid>
               {relatedPosts.map(relatedPost => (
                 <RelatedPostCard key={relatedPost.id}>
-                  {relatedPost.featured_image && (
+                  {(relatedPost.featured_image_url || relatedPost.featured_image) && (
                     <RelatedPostImage 
-                      src={mediaAPI.getImageUrl(relatedPost.featured_image)} 
+                      src={relatedPost.featured_image_url || mediaAPI.getImageUrl(relatedPost.featured_image)} 
                       alt={relatedPost.title}
                       onError={(e) => {
                         e.target.src = placeholderImage;

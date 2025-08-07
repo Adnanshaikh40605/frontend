@@ -266,7 +266,7 @@ const BlogPage = () => {
   }
   
   const plainTextExcerpt = getPlainTextExcerpt(post.content);
-  const imageUrl = post.featured_image ? mediaAPI.getImageUrl(post.featured_image) : null;
+  const imageUrl = post.featured_image_url || (post.featured_image ? mediaAPI.getImageUrl(post.featured_image) : null);
   
   // Add share functions
   const shareOnTwitter = () => {
@@ -297,7 +297,7 @@ const BlogPage = () => {
       <SEO 
         title={post.title}
         description={plainTextExcerpt}
-        image={post.featured_image}
+        image={post.featured_image_url || post.featured_image}
         url={currentUrl}
         published={post.created_at}
         modified={post.updated_at}

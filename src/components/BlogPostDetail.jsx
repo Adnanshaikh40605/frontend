@@ -87,10 +87,10 @@ const BlogPostDetail = ({ postId }) => {
         )}
       </div>
       
-      {post.featured_image && (
+      {(post.featured_image_url || post.featured_image) && (
         <div className="featured-image">
           <img 
-            src={post.featured_image} 
+            src={post.featured_image_url || post.featured_image} 
             alt={post.title} 
             onError={(e) => {
               e.target.src = 'https://via.placeholder.com/800x400?text=No+Image';

@@ -231,9 +231,9 @@ const BlogPostCard = ({ post }) => {
     return null;
   }
   
-  const imageUrl = post.featured_image 
+  const imageUrl = post.featured_image_url || (post.featured_image 
     ? mediaAPI.getImageUrl(post.featured_image)
-    : null;
+    : null);
   
   // Get excerpt - use API excerpt or create from content
   const getExcerpt = () => {
