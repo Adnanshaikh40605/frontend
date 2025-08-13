@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../context/AuthContext';
 import LogoutIcon from '@mui/icons-material/Logout';
+import SessionStatusIndicator from './SessionStatusIndicator';
 
 const HeaderContainer = styled.header`
   background-color: #ffffff;
@@ -369,6 +370,7 @@ const Header = () => {
           <UserSection>
             {isAuthenticated && currentUser ? (
               <>
+                <SessionStatusIndicator compact={true} />
                 <UserInfo>
                   <UserAvatar>{getUserInitials()}</UserAvatar>
                   <UserName>

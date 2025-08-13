@@ -2,38 +2,30 @@ import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { Link, useLocation } from 'react-router-dom';
 import { postAPI } from '../api/apiService';
-import BlogHeader from '../components/BlogHeader';
-import BlogFooter from '../components/BlogFooter';
+import DashboardLayout from '../components/DashboardLayout';
 import SEO from '../components/SEO';
 import Image from '../components/Image';
 import placeholderImage from '../assets/placeholder-image.js';
 
-const PageContainer = styled.div`
-  font-family: 'Inter', sans-serif;
-  background-color: #fff;
-`;
-
-const MainContent = styled.main`
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-`;
-
 const Header = styled.header`
   text-align: center;
   margin-bottom: 3rem;
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
 const BlogTitle = styled.h1`
   font-size: 2.5rem;
   font-weight: 700;
-  color: #333;
+  color: #2d3748;
   margin-bottom: 1rem;
 `;
 
 const BlogSubtitle = styled.p`
   font-size: 1.1rem;
-  color: #666;
+  color: #718096;
   max-width: 700px;
   margin: 0 auto;
   line-height: 1.6;
@@ -41,20 +33,25 @@ const BlogSubtitle = styled.p`
 
 const SearchContainer = styled.div`
   max-width: 550px;
-  margin: 2.5rem auto;
+  margin: 2rem auto;
   position: relative;
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
 const SearchInput = styled.input`
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 1px solid #ddd;
+  border: 1px solid #e2e8f0;
   border-radius: 6px;
   font-size: 1rem;
   outline: none;
   
   &:focus {
-    border-color: #0066cc;
+    border-color: #c53030;
+    box-shadow: 0 0 0 3px rgba(197, 48, 48, 0.1);
   }
 `;
 
@@ -70,12 +67,12 @@ const SearchTypeButton = styled.button`
   border: none;
   padding: 0.25rem 0.5rem;
   cursor: pointer;
-  color: ${props => props.$active ? '#0066cc' : '#666'};
+  color: ${props => props.$active ? '#c53030' : '#718096'};
   font-weight: ${props => props.$active ? 'bold' : 'normal'};
-  border-bottom: 2px solid ${props => props.$active ? '#0066cc' : 'transparent'};
+  border-bottom: 2px solid ${props => props.$active ? '#c53030' : 'transparent'};
   
   &:hover {
-    color: #0066cc;
+    color: #c53030;
   }
 `;
 
@@ -92,7 +89,7 @@ const SearchButton = styled.button`
   right: 0;
   top: 0;
   padding: 13px 1rem;
-  background-color: #0066cc;
+  background-color: #c53030;
   color: white;
   border: none;
   border-top-right-radius: 6px;
@@ -115,14 +112,16 @@ const BlogPost = styled.article`
   background: white;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   height: 100%;
   display: flex;
   flex-direction: column;
+  border-top: 3px solid #c53030;
   
   &:hover {
     transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
   }
 `;
 
@@ -154,16 +153,16 @@ const PostMeta = styled.div`
   display: flex;
   align-items: center;
   margin-bottom: 0.75rem;
-  color: #666;
+  color: #718096;
   font-size: 0.85rem;
 `;
 
 const PostDate = styled.span`
-  color: #666;
+  color: #718096;
 `;
 
 const ReadTime = styled.span`
-  color: #666;
+  color: #718096;
   &:before {
     content: "•";
     margin: 0 0.5rem;
@@ -172,7 +171,7 @@ const ReadTime = styled.span`
 
 const PostTitle = styled.h2`
   font-size: 1.4rem;
-  color: #333;
+  color: #2d3748;
   margin-bottom: 0.75rem;
   font-weight: 600;
   line-height: 1.3;
@@ -182,13 +181,13 @@ const PostTitle = styled.h2`
     text-decoration: none;
     
     &:hover {
-      color: #0066cc;
+      color: #c53030;
     }
   }
 `;
 
 const PostExcerpt = styled.p`
-  color: #555;
+  color: #4a5568;
   font-size: 1rem;
   line-height: 1.6;
   margin-bottom: 1.5rem;
@@ -197,9 +196,9 @@ const PostExcerpt = styled.p`
 
 const ReadMoreButton = styled(Link)`
   display: inline-block;
-  padding: 0.5rem 1rem;
-  background-color: #ffcc00;
-  color: #333;
+  padding: 0.75rem 1.5rem;
+  background-color: #c53030;
+  color: white;
   text-decoration: none;
   border-radius: 4px;
   font-weight: 500;
@@ -231,19 +230,31 @@ const Pagination = styled.div`
   justify-content: center;
   margin-top: 3rem;
   gap: 0.5rem;
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
 const PageButton = styled.button`
-  padding: 0.5rem 1rem;
-  background-color: ${props => props.$active ? '#333' : '#f8f8f8'};
-  color: ${props => props.$active ? 'white' : '#333'};
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  background-color: ${props => props.$active ? '#c53030' : 'white'};
+  color: ${props => props.$active ? 'white' : '#2d3748'};
+  border: 1px solid ${props => props.$active ? '#c53030' : '#e2e8f0'};
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
+  font-weight: 500;
   
-  &:hover {
-    background-color: ${props => props.$active ? '#333' : '#e9e9e9'};
+  &:hover:not(:disabled) {
+    background-color: ${props => props.$active ? '#a02626' : '#f7fafc'};
+    transform: translateY(-1px);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
   }
 `;
 
@@ -543,7 +554,11 @@ const BlogListPage = () => {
   };
 
   return (
-    <PageContainer>
+    <DashboardLayout 
+      title="Public Blog" 
+      subtitle="Browse and read all published blog posts"
+      showContentWrapper={false}
+    >
       {/* SEO Meta Tags */}
       <SEO 
         title={pageTitle}
@@ -555,8 +570,6 @@ const BlogListPage = () => {
       <LoadingOverlay $isVisible={visibleLoading}>
         <Spinner />
       </LoadingOverlay>
-      <BlogHeader activeTab="blog" />
-      <MainContent ref={mainContentRef}>
         {renderContent()}
         
         <Pagination>
@@ -584,9 +597,7 @@ const BlogListPage = () => {
             Next
           </PageButton>
         </Pagination>
-      </MainContent>
-      <BlogFooter />
-    </PageContainer>
+    </DashboardLayout>
   );
 };
 

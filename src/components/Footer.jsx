@@ -28,15 +28,10 @@ const Copyright = styled.p`
 `;
 
 const Footer = () => {
-  // Use date-fns to get current year safely
-  const year = getYear(new Date());
-  
   return (
     <FooterContainer>
       <FooterContent>
-        <Copyright>
-          &copy; {year} Blog CMS. All rights reserved.
-        </Copyright>
+        {/* Footer content removed as requested */}
       </FooterContent>
     </FooterContainer>
   );

@@ -10,7 +10,7 @@ export const BlogProvider = ({ children }) => {
   const [currentPost, setCurrentPost] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+
   // Pagination state
   const [pagination, setPagination] = useState({
     count: 0,
@@ -20,38 +20,38 @@ export const BlogProvider = ({ children }) => {
     totalPages: 1,
     hasMore: false
   });
-  
+
   // Post analytics state
   const [postViews, setPostViews] = useState({});
-  
+
   // Record post view - define this BEFORE fetchPost to fix circular dependency
   const incrementPostView = useCallback((postId) => {
     const storedViews = localStorage.getItem('postViews');
     let viewData = storedViews ? JSON.parse(storedViews) : {};
-    
+
     // Check if the post has been viewed in the current session
     if (!viewData[postId]) {
       // Record the view
       viewData[postId] = true;
       localStorage.setItem('postViews', JSON.stringify(viewData));
-      
+
       // Update state
       setPostViews(prevViews => ({
-        ...prevViews, 
+        ...prevViews,
         [postId]: (prevViews[postId] || 0) + 1
       }));
-      
+
       // In a real app, you'd send this to the server
       // api.post(`/posts/${postId}/view/`);
     }
   }, []);
-  
+
   // Fetch all posts with pagination
   const fetchPosts = useCallback(async (page = 1, pageSize = 10, append = false) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Use the new postAPI service
       let data;
       try {
@@ -63,11 +63,11 @@ export const BlogProvider = ({ children }) => {
         setPosts([]);
         return [];
       }
-      
+
       // Ensure we have a valid results array
-      const validResults = Array.isArray(data?.results) ? data.results : 
-                          (Array.isArray(data) ? data : []);
-      
+      const validResults = Array.isArray(data?.results) ? data.results :
+        (Array.isArray(data) ? data : []);
+
       if (append && page > 1) {
         // Append new posts for infinite scroll - ensure we don't duplicate
         setPosts(prevPosts => {
@@ -79,7 +79,7 @@ export const BlogProvider = ({ children }) => {
         // Replace posts for initial load or filter change
         setPosts(validResults);
       }
-      
+
       // Update pagination info (if applicable)
       setPagination({
         count: data?.count || validResults.length || 0,
@@ -89,7 +89,7 @@ export const BlogProvider = ({ children }) => {
         totalPages: data?.count ? Math.ceil(data.count / pageSize) : 1,
         hasMore: !!data?.next
       });
-      
+
       return validResults;
     } catch (err) {
       console.error('Error fetching posts:', err);
@@ -114,12 +114,12 @@ export const BlogProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       let data;
       try {
         // Use the new postAPI service
         data = await postAPI.getById(id);
-        
+
         if (!data || !data.id) {
           throw new Error('Invalid post data received');
         }
@@ -129,13 +129,13 @@ export const BlogProvider = ({ children }) => {
         setCurrentPost(null);
         throw apiError;
       }
-      
+
       // Only update state and track views if API call was successful
       setCurrentPost(data);
-      
+
       // Record a view for this post
       incrementPostView(id);
-      
+
       return data;
     } catch (err) {
       console.error(`Error in fetchPost for post with id ${id}:`, err);
@@ -146,19 +146,19 @@ export const BlogProvider = ({ children }) => {
       setLoading(false);
     }
   }, [incrementPostView]);
-  
+
   // Create a new post
   const createPost = async (postData) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Use the new postAPI service
       const newPost = await postAPI.create(postData);
-      
+
       // Update the posts list
       setPosts(prevPosts => [newPost, ...prevPosts]);
-      
+
       return newPost;
     } catch (err) {
       setError('Failed to create post');
@@ -168,25 +168,25 @@ export const BlogProvider = ({ children }) => {
       setLoading(false);
     }
   };
-  
+
   // Update an existing post
   const updatePost = async (id, postData) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Use the new postAPI service
       const updatedPost = await postAPI.update(id, postData);
-      
+
       // Update the posts list and current post
-      setPosts(prevPosts => prevPosts.map(post => 
+      setPosts(prevPosts => prevPosts.map(post =>
         post.id === id ? updatedPost : post
       ));
-      
+
       if (currentPost && currentPost.id === id) {
         setCurrentPost(updatedPost);
       }
-      
+
       return updatedPost;
     } catch (err) {
       setError('Failed to update post');
@@ -196,24 +196,24 @@ export const BlogProvider = ({ children }) => {
       setLoading(false);
     }
   };
-  
+
   // Delete a post
   const deletePost = async (id) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Use the new postAPI service
       await postAPI.delete(id);
-      
+
       // Remove from posts list
       setPosts(prevPosts => prevPosts.filter(post => post.id !== id));
-      
+
       // Clear current post if deleted
       if (currentPost && currentPost.id === id) {
         setCurrentPost(null);
       }
-      
+
       return true;
     } catch (err) {
       setError('Failed to delete post');
@@ -232,7 +232,7 @@ export const BlogProvider = ({ children }) => {
         const postData = await postAPI.getById(id);
         setCurrentPost(postData);
       }
-      
+
       const newStatus = !currentPost.published;
       return await updatePost(id, { published: newStatus });
     } catch (err) {
@@ -241,13 +241,13 @@ export const BlogProvider = ({ children }) => {
       throw err;
     }
   };
-  
+
   // Preview post
   const previewPost = async (postData) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const previewData = await postAPI.previewPost(postData);
       return previewData;
     } catch (err) {
@@ -258,7 +258,7 @@ export const BlogProvider = ({ children }) => {
       setLoading(false);
     }
   };
-  
+
   // Check broken links in post content
   const checkBrokenLinks = async (content) => {
     try {
@@ -274,7 +274,7 @@ export const BlogProvider = ({ children }) => {
   const getImageUrl = (imagePath) => {
     return mediaAPI.getImageUrl(imagePath);
   };
-  
+
   // Provide the context value
   const contextValue = {
     posts,
@@ -295,7 +295,7 @@ export const BlogProvider = ({ children }) => {
     getImageUrl,
     incrementPostView
   };
-  
+
   return (
     <BlogContext.Provider value={contextValue}>
       {children}

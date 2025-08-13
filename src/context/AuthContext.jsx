@@ -1,8 +1,9 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ENDPOINTS } from '../api/apiEndpoints';
-import { isTokenExpired, parseJwt } from '../utils/authUtils';
+import { isTokenExpired } from '../utils/authUtils';
 import axiosInstance from '../utils/axiosConfig';
+// Removed session components - using reactive approach with axios interceptor
 
 // Create the context
 const AuthContext = createContext();
@@ -17,7 +18,21 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Removed session expired modal - axios interceptor handles redirects
   const navigate = useNavigate();
+
+  // Listen for session expiration events from axios interceptor
+  useEffect(() => {
+    const handleSessionExpired = (event) => {
+      console.log('Session expired:', event.detail?.reason);
+      setIsAuthenticated(false);
+      setCurrentUser(null);
+      // The axios interceptor already handles the redirect
+    };
+
+    window.addEventListener('sessionExpired', handleSessionExpired);
+    return () => window.removeEventListener('sessionExpired', handleSessionExpired);
+  }, []);
   
   // Check if user is already logged in on initial load
   useEffect(() => {
@@ -140,6 +155,8 @@ export const AuthProvider = ({ children }) => {
       navigate('/login');
     }
   };
+
+  // Removed session modal handlers - axios interceptor handles redirects automatically
   
   const value = {
     currentUser,
@@ -154,6 +171,8 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={value}>
       {!loading ? children : <div>Loading...</div>}
+      
+      {/* Removed session modals - axios interceptor handles redirects automatically */}
     </AuthContext.Provider>
   );
 };

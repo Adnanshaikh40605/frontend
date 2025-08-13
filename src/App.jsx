@@ -24,12 +24,16 @@ import BlogListPage from './pages/BlogListPage';
 import BlogPage from './pages/BlogPage';
 import BlogPostPage from './pages/BlogPostPage';
 import LoginPage from './pages/LoginPage';
+import EditorTestPage from './pages/EditorTestPage';
+import SessionTestPage from './pages/SessionTestPage';
 
 // Import Protected Route component
 import ProtectedRoute from './components/ProtectedRoute';
 
-// Import API test utility (will be available in window.testApi)
-import './utils/apiTest';
+// Import API test utility (will be available in window.testApi) - only in development
+if (import.meta.env.DEV) {
+  import('./utils/apiTest');
+}
 
 // Global styles
 const GlobalStyle = createGlobalStyle`
@@ -381,6 +385,12 @@ const App = () => {
                 {/* Public blog routes */}
                 <Route path="blog" element={<BlogListPage />} />
                 <Route path="blog/:slug" element={<BlogPostPage />} />
+                
+                {/* Test route for Lexical editor */}
+                <Route path="editor-test" element={<EditorTestPage />} />
+                
+                {/* Test route for session expiration */}
+                <Route path="session-test" element={<SessionTestPage />} />
                 
                 {/* Legacy routes for backwards compatibility */}
                 <Route path="posts">

@@ -2,25 +2,31 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { postAPI, mediaAPI } from '../api/apiService';
+import DashboardLayout from '../components/DashboardLayout';
 import SEO from '../components/SEO';
 import Image from '../components/Image';
 
 const BlogContainer = styled.div`
   max-width: 800px;
   margin: 0 auto;
+  background: white;
+  border-radius: 8px;
   padding: 2rem;
-  font-family: 'Inter', sans-serif;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-family: 'Lexend', sans-serif;
 `;
 
 const BlogHeader = styled.div`
   margin-bottom: 2rem;
+  text-align: center;
 `;
 
 const BlogTitle = styled.h1`
   font-size: 2rem;
-  color: #333;
+  color: #2d3748;
   margin-bottom: 1rem;
   line-height: 1.3;
+  font-weight: 600;
 `;
 
 const BlogContent = styled.div`
@@ -243,25 +249,31 @@ const BlogPage = () => {
 
   if (loading) {
     return (
-      <BlogContainer>
-        <LoadingMessage>Loading blog post...</LoadingMessage>
-      </BlogContainer>
+      <DashboardLayout title="Loading..." subtitle="Please wait while we load the blog post">
+        <BlogContainer>
+          <LoadingMessage>Loading blog post...</LoadingMessage>
+        </BlogContainer>
+      </DashboardLayout>
     );
   }
 
   if (error) {
     return (
-      <BlogContainer>
-        <ErrorMessage>{error}</ErrorMessage>
-      </BlogContainer>
+      <DashboardLayout title="Error" subtitle="There was an issue loading the blog post">
+        <BlogContainer>
+          <ErrorMessage>{error}</ErrorMessage>
+        </BlogContainer>
+      </DashboardLayout>
     );
   }
 
   if (!post) {
     return (
-      <BlogContainer>
-        <ErrorMessage>Blog post not found</ErrorMessage>
-      </BlogContainer>
+      <DashboardLayout title="Not Found" subtitle="The requested blog post could not be found">
+        <BlogContainer>
+          <ErrorMessage>Blog post not found</ErrorMessage>
+        </BlogContainer>
+      </DashboardLayout>
     );
   }
   
@@ -292,7 +304,12 @@ const BlogPage = () => {
   };
 
   return (
-    <BlogContainer>
+    <DashboardLayout 
+      title="Blog Post" 
+      subtitle="Read the full blog post content"
+      showContentWrapper={false}
+    >
+      <BlogContainer>
       {/* SEO Meta Tags */}
       <SEO 
         title={post.title}
@@ -359,7 +376,8 @@ const BlogPage = () => {
           </ShareButton>
         </ShareButtons>
       </ShareSection>
-    </BlogContainer>
+      </BlogContainer>
+    </DashboardLayout>
   );
 };
 

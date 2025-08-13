@@ -4,11 +4,10 @@ import styled from 'styled-components';
 import { useBlog } from '../context/BlogContext';
 import CommentForm from '../components/CommentForm';
 import Comment from '../components/Comment';
+import DashboardLayout from '../components/DashboardLayout';
 import { formatDate } from '../utils/dateUtils';
 import { sanitizeBlogContent } from '../utils/sanitize';
 import { generateTableOfContents, renderTocHtml, makeHeadingsClickable } from '../utils/tocGenerator';
-import BlogHeader from '../components/BlogHeader';
-import BlogFooter from '../components/BlogFooter';
 import placeholderImage from '../assets/placeholder-image.js';
 import { postAPI, mediaAPI } from '../api';
 import usePostComments from '../hooks/usePostComments';
@@ -28,15 +27,14 @@ export const clearAllPostCache = () => {
   postCache.clear();
 };
 
-const PageContainer = styled.div`
-  font-family: 'Lexend', sans-serif;
-  background-color: #fff;
-`;
-
 const MainContent = styled.main`
   max-width: 800px;
   margin: 0 auto;
+  background: white;
+  border-radius: 8px;
   padding: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
 
   @media (max-width: 768px) {
     padding: 1.5rem;
@@ -46,12 +44,12 @@ const MainContent = styled.main`
 const Breadcrumb = styled.div`
   display: flex;
   gap: 0.5rem;
-  color: #666;
+  color: #718096;
   font-size: 0.9rem;
   margin-bottom: 1rem;
   
   a {
-    color: #0066cc;
+    color: #c53030;
     text-decoration: none;
     
     &:hover {
@@ -67,7 +65,7 @@ const PostHeader = styled.div`
 
 const PostTitle = styled.h1`
   font-size: 2.2rem;
-  color: #333;
+  color: #2d3748;
   margin-bottom: 1rem;
   line-height: 1.3;
   font-weight: 600;
@@ -78,17 +76,17 @@ const PostMeta = styled.div`
   display: flex;
   justify-content: center;
   gap: 1rem;
-  color: #666;
+  color: #718096;
   font-size: 0.9rem;
   margin-bottom: 2rem;
 `;
 
 const PostDate = styled.span`
-  color: #666;
+  color: #718096;
 `;
 
 const ReadTime = styled.span`
-  color: #666;
+  color: #718096;
   &:before {
     content: "•";
     margin: 0 0.5rem;
@@ -491,14 +489,18 @@ const Spinner = styled.div`
 
 const CommentsSection = styled.div`
   margin-top: 3rem;
-  border-top: 1px solid #eaeaea;
-  padding-top: 2rem;
+  background: white;
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-top: 3px solid #c53030;
 `;
 
 const CommentsHeader = styled.h2`
   font-size: 1.5rem;
   margin-bottom: 1.5rem;
-  color: #333;
+  color: #2d3748;
+  font-weight: 600;
 `;
 
 const CommentsList = styled.div`
@@ -506,10 +508,11 @@ const CommentsList = styled.div`
 `;
 
 const LoadMoreButton = styled.button`
-  background-color: #f5f5f5;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 0.5rem 1rem;
+  background-color: #c53030;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem 1.5rem;
   font-size: 0.9rem;
   cursor: pointer;
   margin: 1rem auto;
@@ -980,16 +983,18 @@ const BlogPostPage = () => {
   };
 
   return (
-    <PageContainer>
+    <DashboardLayout 
+      title="Blog Post" 
+      subtitle="Read the full blog post content"
+      showContentWrapper={false}
+    >
       <LoadingOverlay $isVisible={loading}>
         <Spinner />
       </LoadingOverlay>
-      <BlogHeader activePage="blog" />
       <MainContent>
         {renderContent()}
       </MainContent>
-      <BlogFooter />
-    </PageContainer>
+    </DashboardLayout>
   );
 };
 

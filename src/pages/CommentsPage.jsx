@@ -1,11 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import Comment from '../components/Comment';
+import DashboardLayout from '../components/DashboardLayout';
 import { commentAPI } from '../api/apiService';
-
-const Container = styled.div`
-  width: 100%;
-`;
 
 const Header = styled.div`
   display: flex;
@@ -21,12 +18,6 @@ const Header = styled.div`
   }
 `;
 
-const Title = styled.h1`
-  font-size: 2rem;
-  color: #333;
-  margin: 0;
-`;
-
 const TabsContainer = styled.div`
   display: flex;
   border-bottom: 1px solid #dee2e6;
@@ -39,16 +30,16 @@ const Tab = styled.button`
   padding: 0.75rem 1.25rem;
   background-color: transparent;
   border: none;
-  border-bottom: 3px solid ${props => props.$active ? '#007bff' : 'transparent'};
-  color: ${props => props.$active ? '#007bff' : '#6c757d'};
+  border-bottom: 3px solid ${props => props.$active ? '#c53030' : 'transparent'};
+  color: ${props => props.$active ? '#c53030' : '#718096'};
   font-weight: ${props => props.$active ? 'bold' : 'normal'};
   cursor: pointer;
   transition: all 0.2s;
   position: relative;
   
   &:hover {
-    color: #0069d9;
-    background-color: #f8f9fa;
+    color: #a02626;
+    background-color: #f7fafc;
   }
   
   &:focus {
@@ -57,7 +48,7 @@ const Tab = styled.button`
 `;
 
 const TabCounter = styled.span`
-  background-color: ${props => props.$active ? '#007bff' : '#6c757d'};
+  background-color: ${props => props.$active ? '#c53030' : '#718096'};
   color: white;
   border-radius: 10px;
   padding: 0.15rem 0.5rem;
@@ -103,19 +94,19 @@ const BulkActionSelect = styled.select`
 
 const ApplyButton = styled.button`
   padding: 0.375rem 0.75rem;
-  background-color: #007bff;
+  background-color: #c53030;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.2s;
   
   &:hover {
-    background-color: #0069d9;
+    background-color: #a02626;
   }
   
   &:disabled {
-    background-color: #6c757d;
+    background-color: #718096;
     cursor: not-allowed;
   }
 `;
@@ -148,16 +139,16 @@ const PaginationContainer = styled.div`
 
 const PageButton = styled.button`
   padding: 0.375rem 0.75rem;
-  border: 1px solid ${props => props.$active ? '#007bff' : '#dee2e6'};
-  background-color: ${props => props.$active ? '#007bff' : 'white'};
-  color: ${props => props.$active ? 'white' : '#212529'};
-  border-radius: 4px;
+  border: 1px solid ${props => props.$active ? '#c53030' : '#e2e8f0'};
+  background-color: ${props => props.$active ? '#c53030' : 'white'};
+  color: ${props => props.$active ? 'white' : '#2d3748'};
+  border-radius: 6px;
   cursor: ${props => props.$disabled ? 'not-allowed' : 'pointer'};
   opacity: ${props => props.$disabled ? 0.65 : 1};
   transition: all 0.2s;
   
   &:hover {
-    background-color: ${props => props.$active ? '#0069d9' : '#f8f9fa'};
+    background-color: ${props => props.$active ? '#a02626' : '#f7fafc'};
   }
 `;
 
@@ -625,9 +616,11 @@ const CommentsPage = () => {
   };
   
   return (
-    <Container>
+    <DashboardLayout 
+      title="Comments Management" 
+      subtitle="Moderate and manage user comments across all blog posts"
+    >
       <Header>
-        <Title>Comments Management</Title>
         
         {isDevelopment && (
           <button 
@@ -817,7 +810,7 @@ const CommentsPage = () => {
           <pre>{JSON.stringify(debug, null, 2)}</pre>
         </DebugInfo>
       )}
-    </Container>
+    </DashboardLayout>
   );
 };
 

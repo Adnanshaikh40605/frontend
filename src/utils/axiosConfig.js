@@ -42,9 +42,14 @@ axiosInstance.interceptors.request.use(
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
           
+          // Dispatch a custom event for session expiration
+          window.dispatchEvent(new CustomEvent('sessionExpired', {
+            detail: { reason: 'Token refresh failed' }
+          }));
+          
           // Redirect to login if needed
           if (window.location.pathname !== '/login') {
-            window.location.href = '/login';
+            window.location.href = '/login?sessionExpired=true';
           }
         }
       } else {
@@ -103,9 +108,14 @@ axiosInstance.interceptors.response.use(
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
           
+          // Dispatch a custom event for session expiration
+          window.dispatchEvent(new CustomEvent('sessionExpired', {
+            detail: { reason: 'Token refresh failed in response interceptor' }
+          }));
+          
           // Redirect to login if needed
           if (window.location.pathname !== '/login') {
-            window.location.href = '/login';
+            window.location.href = '/login?sessionExpired=true';
           }
         }
       } else {
@@ -113,9 +123,14 @@ axiosInstance.interceptors.response.use(
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         
+        // Dispatch a custom event for session expiration
+        window.dispatchEvent(new CustomEvent('sessionExpired', {
+          detail: { reason: 'Refresh token expired in response interceptor' }
+        }));
+        
         // Redirect to login if needed
         if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
+          window.location.href = '/login?sessionExpired=true';
         }
       }
     }

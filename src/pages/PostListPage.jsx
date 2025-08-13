@@ -4,22 +4,11 @@ import styled from 'styled-components';
 import { postAPI } from '../api/apiService';
 import { mediaAPI } from '../api/apiService';
 import Button from '../components/Button';
+import DashboardLayout from '../components/DashboardLayout';
 import PreviewIcon from '@mui/icons-material/Preview';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-
-// Responsive container with proper padding for different screen sizes
-const Container = styled.div`
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
-  
-  @media (min-width: 768px) {
-    padding: 1.5rem;
-  }
-`;
 
 // Header with improved responsive behavior
 const Header = styled.div`
@@ -37,32 +26,22 @@ const Header = styled.div`
   }
 `;
 
-const Title = styled.h1`
-  font-size: 1.75rem;
-  color: #333;
-  margin: 0;
-  
-  @media (min-width: 768px) {
-    font-size: 2rem;
-  }
-`;
-
 // Action buttons container in the header
 const HeaderActions = styled.div`
   display: flex;
   gap: 0.75rem;
 `;
 
-// Create new button with consistent styling
+// Create new button with dashboard theme styling
 const CreateButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem 1.25rem;
-  background-color: white;
-  color: #28a745;
-  border: 1px solid #28a745;
-  border-radius: 4px;
+  padding: 0.75rem 1.5rem;
+  background-color: #c53030;
+  color: white;
+  border: none;
+  border-radius: 6px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -70,17 +49,11 @@ const CreateButton = styled.button`
   svg {
     margin-right: 0.5rem;
     font-size: 20px;
-    color: #28a745;
   }
   
   &:hover {
-    background-color: #28a745;
-    color: white;
+    background-color: #a02626;
     transform: translateY(-2px);
-    
-    svg {
-      color: white;
-    }
   }
   
   &:active {
@@ -114,15 +87,15 @@ const Tab = styled.button`
   padding: 0.75rem 1.25rem;
   background-color: transparent;
   border: none;
-  border-bottom: 3px solid ${props => props.$active ? '#007bff' : 'transparent'};
-  color: ${props => props.$active ? '#007bff' : '#6c757d'};
+  border-bottom: 3px solid ${props => props.$active ? '#c53030' : 'transparent'};
+  color: ${props => props.$active ? '#c53030' : '#6c757d'};
   font-weight: ${props => props.$active ? 'bold' : 'normal'};
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
   
   &:hover {
-    color: #0069d9;
+    color: #a02626;
   }
 `;
 
@@ -220,14 +193,14 @@ const ActionButton = styled.button`
   height: 36px;
   margin-right: 0.5rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
   position: relative;
   background-color: transparent;
   
   &:hover {
-    background-color: #f1f3f5;
+    background-color: #f7fafc;
     transform: translateY(-2px);
     
     ${Tooltip} {
@@ -248,10 +221,10 @@ const ActionButton = styled.button`
     font-size: 20px;
     color: ${props => {
       switch (props.$variant) {
-        case 'primary': return '#007bff';
-        case 'success': return '#28a745';
-        case 'danger': return '#dc3545';
-        default: return '#6c757d';
+        case 'primary': return '#4299e1';
+        case 'success': return '#48bb78';
+        case 'danger': return '#f56565';
+        default: return '#718096';
       }
     }};
   }
@@ -341,31 +314,31 @@ const Pagination = styled.div`
 
 const PageButton = styled.button`
   padding: 0.375rem 0.75rem;
-  border: 1px solid ${props => props.$active ? '#007bff' : '#dee2e6'};
-  background-color: ${props => props.$active ? '#007bff' : 'white'};
-  color: ${props => props.$active ? 'white' : '#212529'};
-  border-radius: 4px;
+  border: 1px solid ${props => props.$active ? '#c53030' : '#e2e8f0'};
+  background-color: ${props => props.$active ? '#c53030' : 'white'};
+  color: ${props => props.$active ? 'white' : '#2d3748'};
+  border-radius: 6px;
   cursor: ${props => props.$disabled ? 'not-allowed' : 'pointer'};
   opacity: ${props => props.$disabled ? 0.65 : 1};
   transition: all 0.2s;
   
   &:hover:not(:disabled) {
-    background-color: ${props => props.$active ? '#0069d9' : '#f8f9fa'};
+    background-color: ${props => props.$active ? '#a02626' : '#f7fafc'};
   }
 `;
 
 const RetryButton = styled.button`
   padding: 0.5rem 1rem;
-  background-color: #007bff;
+  background-color: #c53030;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   margin-top: 1rem;
   cursor: pointer;
   font-weight: 500;
   
   &:hover {
-    background-color: #0069d9;
+    background-color: #a02626;
   }
 `;
 
@@ -373,13 +346,13 @@ const RetryButton = styled.button`
 const StatusIndicator = styled.span`
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem 0.75rem;
   border-radius: 1rem;
   font-size: 0.75rem;
-  font-weight: 500;
-  background-color: ${props => props.$published ? '#e6f7ee' : '#f8f9fa'};
-  color: ${props => props.$published ? '#28a745' : '#6c757d'};
-  border: 1px solid ${props => props.$published ? '#c3e6cb' : '#dee2e6'};
+  font-weight: 600;
+  background-color: ${props => props.$published ? '#c6f6d5' : '#fed7d7'};
+  color: ${props => props.$published ? '#22543d' : '#742a2a'};
+  border: 1px solid ${props => props.$published ? '#9ae6b4' : '#feb2b2'};
   
   &:before {
     content: '';
@@ -388,7 +361,7 @@ const StatusIndicator = styled.span`
     height: 8px;
     border-radius: 50%;
     margin-right: 0.5rem;
-    background-color: ${props => props.$published ? '#28a745' : '#6c757d'};
+    background-color: ${props => props.$published ? '#38a169' : '#e53e3e'};
   }
 `;
 
@@ -613,9 +586,11 @@ const PostListPage = () => {
   };
   
   return (
-    <Container>
+    <DashboardLayout 
+      title="Content Management" 
+      subtitle="Create, edit, and manage all your blog posts"
+    >
       <Header>
-        <Title>Content</Title>
         <HeaderActions>
           <CreateButton onClick={handleCreate}>
             <AddIcon /> New Page
@@ -707,7 +682,7 @@ const PostListPage = () => {
           {renderPagination()}
         </>
       )}
-    </Container>
+    </DashboardLayout>
   );
 };
 

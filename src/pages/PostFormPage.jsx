@@ -3,23 +3,17 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import RichTextEditor from '../components/RichTextEditor';
 import Button from '../components/Button';
+import DashboardLayout from '../components/DashboardLayout';
 import CategoryModal from '../components/CategoryModal';
 import { postAPI, categoriesAPI } from '../api/apiService';
 import slugify from '../utils/slugify';
 import { clearPostCache } from '../pages/BlogPostPage';
 import CloseIcon from '@mui/icons-material/Close';
 
-const Container = styled.div`
-  width: 100%;
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 2rem 0;
-`;
-
 const BackLink = styled(Link)`
   display: inline-flex;
   align-items: center;
-  color: #0066cc;
+  color: #c53030;
   text-decoration: none;
   margin-bottom: 1.5rem;
   font-weight: 500;
@@ -27,34 +21,17 @@ const BackLink = styled(Link)`
   
   &:hover {
     text-decoration: underline;
-    color: #004c99;
-  }
-`;
-
-const Title = styled.h1`
-  font-size: 2.25rem;
-  color: #333;
-  margin-bottom: 2.5rem;
-  font-weight: 700;
-  
-  @media (max-width: 768px) {
-    font-size: 1.75rem;
-    margin-bottom: 2rem;
+    color: #a02626;
   }
 `;
 
 const Form = styled.form`
   display: flex;
   flex-direction: column;
-  gap: 2.5rem;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  padding: 2rem;
+  gap: 2rem;
   
   @media (max-width: 768px) {
-    padding: 1.5rem;
-    gap: 2rem;
+    gap: 1.5rem;
   }
 `;
 
@@ -72,15 +49,15 @@ const Label = styled.label`
 
 const Input = styled.input`
   padding: 0.9rem;
-  border: 1px solid #dce0e5;
+  border: 1px solid #e2e8f0;
   border-radius: 6px;
   font-size: 1rem;
   transition: border-color 0.2s, box-shadow 0.2s;
   
   &:focus {
     outline: none;
-    border-color: #80bdff;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    border-color: #c53030;
+    box-shadow: 0 0 0 2px rgba(197, 48, 48, 0.25);
   }
   
   &[type="file"] {
@@ -392,7 +369,7 @@ const CategorySelect = styled.select`
 
 const AddCategoryButton = styled.button`
   padding: 0.9rem 1.2rem;
-  background: linear-gradient(135deg, #007bff, #0056b3);
+  background: linear-gradient(135deg, #c53030, #a02626);
   color: white;
   border: none;
   border-radius: 6px;
@@ -407,9 +384,9 @@ const AddCategoryButton = styled.button`
   min-width: 100px;
 
   &:hover:not(:disabled) {
-    background: linear-gradient(135deg, #0056b3, #004085);
+    background: linear-gradient(135deg, #a02626, #822020);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+    box-shadow: 0 4px 8px rgba(197, 48, 48, 0.3);
   }
 
   &:active {
@@ -417,7 +394,7 @@ const AddCategoryButton = styled.button`
   }
 
   &:disabled {
-    background: #6c757d;
+    background: #718096;
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
@@ -443,6 +420,25 @@ const SmallSpinner = styled.span`
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
+`;
+
+const Sidebar = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+`;
+
+const SectionTitle = styled.h3`
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid #e9ecef;
+  padding-bottom: 0.5rem;
+`;
+
+const EditorSection = styled.div`
+  margin: 2rem 0;
 `;
 
 const PostFormPage = () => {
@@ -939,148 +935,158 @@ const PostFormPage = () => {
   }
   
   return (
-    <Container>
+    <DashboardLayout 
+      title={isEdit ? 'Edit Blog Post' : 'Create New Blog Post'}
+      subtitle={isEdit ? 'Update your blog post content and settings' : 'Create a new blog post with rich content'}
+    >
       <BackLink to="/admin/posts">
         ← Back to Posts
       </BackLink>
       
-      <Title>{isEdit ? 'Edit Blog Post' : 'Create New Blog Post'}</Title>
-      
       <Form onSubmit={handleSubmit}>
-        {error && (
-          <ErrorContainer>
-            <ErrorMessage>{error}</ErrorMessage>
-          </ErrorContainer>
-        )}
-        
-        {success && (
-          <SuccessContainer>
-            <SuccessMessage>{success}</SuccessMessage>
-          </SuccessContainer>
-        )}
-        
-        <FormGroup>
-          <Label htmlFor="title">Title</Label>
-          <Input
-            type="text"
-            id="title"
-            name="title"
-            value={post.title}
-            onChange={handleChange}
-            placeholder="Enter post title"
-            maxLength={200}
-          />
-          <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.5rem', textAlign: 'right' }}>
-            {post.title.length}/200 characters
-          </div>
-        </FormGroup>
-        
-        <FormGroup>
-          <Label htmlFor="slug">Slug</Label>
-          <SlugInputGroup>
-            <SlugInputWithValidation
-              type="text"
-              id="slug"
-              name="slug"
-              value={post.slug}
-              onChange={handleSlugChange}
-              placeholder="Enter post slug"
-              maxLength={250}
-              $touched={slugEdited}
-              $isValid={slugValidation.isValid}
-              $showValidation={slugEdited}
-            />
-            <SlugValidationMessage $isValid={slugValidation.isValid}>
-              {slugValidation.message}
-            </SlugValidationMessage>
-          </SlugInputGroup>
-          <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.5rem', textAlign: 'right' }}>
-            {post.slug.length}/250 characters
-          </div>
-        </FormGroup>
-        
-        <FormGroup>
-          <Label htmlFor="category">Category</Label>
-          <CategorySelectionContainer>
-            <CategorySelect
-              id="category"
-              name="category"
-              value={post.category || ''}
-              onChange={(e) => setPost(prev => ({ ...prev, category: e.target.value || null }))}
-              disabled={categoriesLoading || loadingCategories}
-            >
-              <option value="">Select a category (optional)</option>
-              {categories.map(category => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </CategorySelect>
-            <AddCategoryButton
-              type="button"
-              onClick={() => setShowCategoryModal(true)}
-              disabled={loadingCategories}
-              title="Create a new category"
-            >
-              {loadingCategories ? (
-                <SmallSpinner />
-              ) : (
-                <>+ Add New</>  
-              )}
-            </AddCategoryButton>
-          </CategorySelectionContainer>
-          <CategoryHelpText>
-            Can't find the right category? Create a new one!
-          </CategoryHelpText>
-          {categoriesLoading && (
-            <div style={{ fontSize: '0.875rem', color: '#6c757d', marginTop: '0.5rem' }}>
-              Loading categories...
-            </div>
+        <Sidebar>
+          {error && (
+            <ErrorContainer>
+              <ErrorMessage>{error}</ErrorMessage>
+            </ErrorContainer>
           )}
-        </FormGroup>
+          
+          {success && (
+            <SuccessContainer>
+              <SuccessMessage>{success}</SuccessMessage>
+            </SuccessContainer>
+          )}
+          
+          <SectionTitle>Post Details</SectionTitle>
+          
+          <FormGroup>
+            <Label htmlFor="title">Title</Label>
+            <Input
+              type="text"
+              id="title"
+              name="title"
+              value={post.title}
+              onChange={handleChange}
+              placeholder="Enter post title"
+              maxLength={200}
+            />
+            <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.5rem', textAlign: 'right' }}>
+              {post.title.length}/200 characters
+            </div>
+          </FormGroup>
+          
+          <FormGroup>
+            <Label htmlFor="slug">Slug</Label>
+            <SlugInputGroup>
+              <SlugInputWithValidation
+                type="text"
+                id="slug"
+                name="slug"
+                value={post.slug}
+                onChange={handleSlugChange}
+                placeholder="Enter post slug"
+                maxLength={250}
+                $touched={slugEdited}
+                $isValid={slugValidation.isValid}
+                $showValidation={slugEdited}
+              />
+              <SlugValidationMessage $isValid={slugValidation.isValid}>
+                {slugValidation.message}
+              </SlugValidationMessage>
+            </SlugInputGroup>
+            <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.5rem', textAlign: 'right' }}>
+              {post.slug.length}/250 characters
+            </div>
+          </FormGroup>
+          
+          <FormGroup>
+            <Label htmlFor="category">Category</Label>
+            <CategorySelectionContainer>
+              <CategorySelect
+                id="category"
+                name="category"
+                value={post.category || ''}
+                onChange={(e) => setPost(prev => ({ ...prev, category: e.target.value || null }))}
+                disabled={categoriesLoading || loadingCategories}
+              >
+                <option value="">Select a category (optional)</option>
+                {categories.map(category => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </CategorySelect>
+              <AddCategoryButton
+                type="button"
+                onClick={() => setShowCategoryModal(true)}
+                disabled={loadingCategories}
+                title="Create a new category"
+              >
+                {loadingCategories ? (
+                  <SmallSpinner />
+                ) : (
+                  <>+ Add New</>  
+                )}
+              </AddCategoryButton>
+            </CategorySelectionContainer>
+            <CategoryHelpText>
+              Can't find the right category? Create a new one!
+            </CategoryHelpText>
+            {categoriesLoading && (
+              <div style={{ fontSize: '0.875rem', color: '#6c757d', marginTop: '0.5rem' }}>
+                Loading categories...
+              </div>
+            )}
+          </FormGroup>
         
-        <FormGroup>
-          <Label htmlFor="excerpt">Excerpt (Optional)</Label>
-          <textarea
-            id="excerpt"
-            name="excerpt"
-            value={post.excerpt}
-            onChange={handleChange}
-            placeholder="Enter a brief description of your post (max 300 characters). If left blank, it will be auto-generated from content."
-            maxLength={300}
-            rows={3}
-            style={{
-              padding: '0.9rem',
-              border: '1px solid #dce0e5',
-              borderRadius: '6px',
-              fontSize: '1rem',
-              fontFamily: 'inherit',
-              resize: 'vertical',
-              transition: 'border-color 0.2s, box-shadow 0.2s'
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = '#80bdff';
-              e.target.style.boxShadow = '0 0 0 2px rgba(0, 123, 255, 0.25)';
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = '#dce0e5';
-              e.target.style.boxShadow = 'none';
-            }}
-          />
-          <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.5rem', textAlign: 'right' }}>
-            {post.excerpt.length}/300 characters
-          </div>
-        </FormGroup>
+          <FormGroup>
+            <Label htmlFor="excerpt">Excerpt (Optional)</Label>
+            <textarea
+              id="excerpt"
+              name="excerpt"
+              value={post.excerpt}
+              onChange={handleChange}
+              placeholder="Brief description..."
+              maxLength={300}
+              rows={3}
+              style={{
+                padding: '0.9rem',
+                border: '1px solid #dce0e5',
+                borderRadius: '6px',
+                fontSize: '0.9rem',
+                fontFamily: 'inherit',
+                resize: 'vertical',
+                transition: 'border-color 0.2s, box-shadow 0.2s'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#80bdff';
+                e.target.style.boxShadow = '0 0 0 2px rgba(0, 123, 255, 0.25)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#dce0e5';
+                e.target.style.boxShadow = 'none';
+              }}
+            />
+            <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.5rem', textAlign: 'right' }}>
+              {post.excerpt.length}/300
+            </div>
+          </FormGroup>
+        </Sidebar>
         
-        <FormGroup>
-          <Label htmlFor="content">Content</Label>
+        <EditorSection>
+          <SectionTitle>Content</SectionTitle>
           <RichTextEditor
             value={post.content}
             onChange={handleEditorChange}
             onImageUpload={handleImageUpload}
             placeholder="Write your blog post content here..."
+            enableImages={true}
+            enableTables={true}
+            enableMarkdown={true}
+            enableCodeHighlight={true}
+            showWordCount={true}
           />
-        </FormGroup>
+        </EditorSection>
         
         <FormGroup>
           <Label htmlFor="featured_image">Featured Image</Label>
@@ -1194,7 +1200,7 @@ const PostFormPage = () => {
         onCategoryCreated={handleCategoryCreated}
         existingCategories={categories}
       />
-    </Container>
+    </DashboardLayout>
   );
 };
 
