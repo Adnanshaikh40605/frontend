@@ -16,6 +16,9 @@ console.log('API URL:', API_URL);
 
 // API Endpoints
 export const ENDPOINTS = {
+  // Base URL for API calls
+  BASE_URL: API_URL,
+  
   // Blog endpoints
   POSTS: `${API_URL}/api/posts/`,
   COMMENTS: `${API_URL}/api/comments/`,

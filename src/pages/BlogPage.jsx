@@ -229,6 +229,15 @@ const BlogPage = () => {
     return excerpt + '...';
   };
 
+  // Get SEO title and description with fallbacks
+  const getSEOTitle = () => {
+    return post?.meta_title || post?.title || 'Blog Post';
+  };
+
+  const getSEODescription = () => {
+    return post?.meta_description || post?.excerpt || getPlainTextExcerpt(post?.content);
+  };
+
   useEffect(() => {
     const fetchPost = async () => {
       try {
@@ -313,8 +322,8 @@ const BlogPage = () => {
         <BlogContainer>
       {/* SEO Meta Tags */}
       <SEO 
-        title={post.title}
-        description={plainTextExcerpt}
+        title={getSEOTitle()}
+        description={getSEODescription()}
         image={post.featured_image_url || post.featured_image}
         url={currentUrl}
         published={post.created_at}

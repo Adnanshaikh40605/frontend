@@ -61,20 +61,149 @@ const Input = styled.input`
   }
   
   &[type="file"] {
-    padding: var(--spacing-3);
-    background-color: var(--surface-light);
-    cursor: pointer;
-    border: 1px dashed var(--border-color);
-    
-    &:hover {
-      background-color: var(--surface);
-    }
+    display: none;
   }
   
   &[type="checkbox"] {
     width: 18px;
     height: 18px;
     cursor: pointer;
+  }
+`;
+
+const FileUploadContainer = styled.div`
+  position: relative;
+  width: 100%;
+`;
+
+const FileUploadArea = styled.div`
+  border: 2px dashed ${props => props.$isDragOver ? '#667eea' : '#d1d5db'};
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  background-color: ${props => props.$isDragOver ? '#f8faff' : '#f9fafb'};
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  
+  &:hover {
+    border-color: #667eea;
+    background-color: #f8faff;
+    transform: translateY(-1px);
+  }
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  &:hover::before {
+    opacity: 1;
+  }
+`;
+
+const UploadIcon = styled.div`
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transition: transform 0.3s ease;
+  
+  ${FileUploadArea}:hover & {
+    transform: scale(1.05);
+  }
+`;
+
+const UploadText = styled.div`
+  color: #374151;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+`;
+
+const UploadSubtext = styled.div`
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+`;
+
+const UploadButton = styled.button`
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
+const FileInfo = styled.div`
+  margin-top: 1rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    border-color: rgba(102, 126, 234, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+`;
+
+const FileName = styled.div`
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  
+  &::before {
+    content: '📁';
+    margin-right: 0.5rem;
+    font-size: 0.9rem;
+  }
+`;
+
+const FileSize = styled.div`
+  font-size: 0.75rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  
+  &::before {
+    content: '💾';
+    margin-right: 0.5rem;
+    font-size: 0.8rem;
   }
 `;
 
@@ -97,16 +226,18 @@ const ImagePreviewContainer = styled.div`
 const ImagePreview = styled.div`
   width: 100%;
   max-width: 300px;
-  background-color: var(--surface-light);
-  border: var(--border);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-2);
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  border-radius: 12px;
+  padding: 0.5rem;
   position: relative;
-  box-shadow: var(--shadow-sm);
-  transition: var(--transition-smooth);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
   
   &:hover {
     transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    border-color: rgba(102, 126, 234, 0.2);
   }
 `;
 
@@ -132,28 +263,37 @@ const PreviewImage = styled.img`
 
 const RemoveButton = styled.button`
   position: absolute;
-  top: -10px;
-  right: -10px;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background-color: var(--danger);
-  color: var(--text-inverse);
-  border: none;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #6b7280;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: var(--shadow-sm);
-  transition: var(--transition-smooth);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
   padding: 0;
+  backdrop-filter: blur(10px);
   
   svg {
-    font-size: 16px;
+    font-size: 18px;
   }
   
   &:hover {
-    background-color: var(--danger-dark);
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.2);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  &:active {
+    transform: scale(0.95);
   }
 `;
 
@@ -369,18 +509,22 @@ const CategorySelectionContainer = styled.div`
 const CategorySelect = styled.select`
   flex: 1;
   padding: var(--spacing-4);
-  border: var(--border);
+  border: 1px solid #dce0e5;
   border-radius: var(--radius-md);
   font-size: 1rem;
   font-family: inherit;
   background-color: var(--surface);
   cursor: pointer;
-  transition: var(--transition-smooth);
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #adb5bd;
+  }
 
   &:focus {
     outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 2px var(--primary-light);
+    border-color: #80bdff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
   }
 
   &:disabled {
@@ -472,12 +616,15 @@ const PostFormPage = () => {
     slug: '',
     content: '',
     excerpt: '',
+    meta_title: '',
+    meta_description: '',
     published: true,
     featured: false,
     category: null,
   });
   const [featuredImage, setFeaturedImage] = useState(null);
   const [featuredImagePreview, setFeaturedImagePreview] = useState('');
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -560,6 +707,8 @@ const PostFormPage = () => {
           slug: data.slug || '',
           content: data.content || '',
           excerpt: data.excerpt || '',
+          meta_title: data.meta_title || '',
+          meta_description: data.meta_description || '',
           published: data.published || true,
           featured: data.featured || false,
           category: data.category ? data.category.id : null,
@@ -719,15 +868,55 @@ const PostFormPage = () => {
   const handleFeaturedImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setFeaturedImage(file);
-
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setFeaturedImagePreview(event.target.result);
-      };
-      reader.readAsDataURL(file);
+      processFile(file);
     }
+  };
+
+  const processFile = (file) => {
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file');
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB');
+      return;
+    }
+
+    setFeaturedImage(file);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setFeaturedImagePreview(event.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      processFile(files[0]);
+    }
+  };
+
+  const handleFileSelect = () => {
+    document.getElementById('featured_image').click();
   };
 
   const handleRemoveFeaturedImage = () => {
@@ -826,6 +1015,8 @@ const PostFormPage = () => {
         slug: post.slug,
         content: post.content,
         excerpt: post.excerpt,
+        meta_title: post.meta_title,
+        meta_description: post.meta_description,
         published: post.published,
         featured: post.featured,
         category: post.category // Explicitly include category field
@@ -993,6 +1184,62 @@ const PostFormPage = () => {
           </FormGroup>
 
           <FormGroup>
+            <Label htmlFor="meta_title">Meta Title</Label>
+            <Input
+              type="text"
+              id="meta_title"
+              name="meta_title"
+              value={post.meta_title}
+              onChange={handleChange}
+              placeholder="Enter meta title for SEO"
+              maxLength={60}
+            />
+            <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.5rem', textAlign: 'right' }}>
+              {post.meta_title.length}/60 characters
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.25rem' }}>
+              Recommended: 50-60 characters for optimal SEO
+            </div>
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="meta_description">Meta Description</Label>
+            <textarea
+              id="meta_description"
+              name="meta_description"
+              value={post.meta_description}
+              onChange={handleChange}
+              placeholder="Enter meta description for SEO"
+              maxLength={160}
+              rows={3}
+              style={{
+                padding: '0.9rem',
+                border: '1px solid #dce0e5',
+                borderRadius: '6px',
+                fontSize: '0.9rem',
+                fontFamily: 'inherit',
+                resize: 'vertical',
+                transition: 'border-color 0.2s, box-shadow 0.2s',
+                width: '100%'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#80bdff';
+                e.target.style.boxShadow = '0 0 0 2px rgba(0, 123, 255, 0.25)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#dce0e5';
+                e.target.style.boxShadow = 'none';
+              }}
+            />
+            <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.5rem', textAlign: 'right' }}>
+              {post.meta_description.length}/160 characters
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.25rem' }}>
+              Recommended: 150-160 characters for optimal SEO
+            </div>
+          </FormGroup>
+
+          <FormGroup>
             <Label htmlFor="category">Category</Label>
             <CategorySelectionContainer>
               <CategorySelect
@@ -1075,29 +1322,58 @@ const PostFormPage = () => {
 
           <FormGroup style={{ marginTop: 'var(--spacing-6)' }}>
             <Label htmlFor="featured_image">Featured Image</Label>
-            <Input
-              type="file"
-              id="featured_image"
-              name="featured_image"
-              onChange={handleFeaturedImageChange}
-              accept="image/*"
-            />
-
-            {featuredImagePreview && (
-              <ImagePreviewContainer>
-                <ImagePreview>
-                  <PreviewImageContainer>
-                    <PreviewImage
-                      src={featuredImagePreview}
-                      alt="Featured preview"
-                    />
-                  </PreviewImageContainer>
-                  <RemoveButton onClick={handleRemoveFeaturedImage}>
-                    <CloseIcon />
-                  </RemoveButton>
-                </ImagePreview>
-              </ImagePreviewContainer>
-            )}
+            <FileUploadContainer>
+              <Input
+                type="file"
+                id="featured_image"
+                name="featured_image"
+                onChange={handleFeaturedImageChange}
+                accept="image/*"
+              />
+              
+              {!featuredImagePreview ? (
+                <FileUploadArea
+                  $isDragOver={isDragOver}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={handleFileSelect}
+                >
+                  <UploadIcon>
+                    📷
+                  </UploadIcon>
+                  <UploadText>Upload Featured Image</UploadText>
+                  <UploadSubtext>
+                    Drag and drop an image here, or click to browse
+                  </UploadSubtext>
+                  <UploadButton type="button">
+                    Choose File
+                  </UploadButton>
+                </FileUploadArea>
+              ) : (
+                <div>
+                  <ImagePreviewContainer>
+                    <ImagePreview>
+                      <PreviewImageContainer>
+                        <PreviewImage
+                          src={featuredImagePreview}
+                          alt="Featured preview"
+                        />
+                      </PreviewImageContainer>
+                      <RemoveButton onClick={handleRemoveFeaturedImage}>
+                        <CloseIcon />
+                      </RemoveButton>
+                    </ImagePreview>
+                  </ImagePreviewContainer>
+                  {featuredImage && (
+                    <FileInfo>
+                      <FileName>{featuredImage.name}</FileName>
+                      <FileSize>{(featuredImage.size / 1024 / 1024).toFixed(2)} MB</FileSize>
+                    </FileInfo>
+                  )}
+                </div>
+              )}
+            </FileUploadContainer>
           </FormGroup>
         </EditorSection>
 

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
+import DashboardStats from '../components/DashboardStats';
 
 const HomePage = () => {
   const { isAuthenticated } = useAuth();
@@ -20,9 +21,7 @@ const HomePage = () => {
       subtitle=""
       showContentWrapper={false}
     >
-      <div style={{ padding: '2rem', marginTop: '64px', minHeight: 'calc(100vh - 64px)' }}>
-        {/* Empty dashboard content */}
-      </div>
+      <DashboardStats />
     </DashboardLayout>
   );
 };

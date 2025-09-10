@@ -98,6 +98,89 @@ const EditorContainer = styled.div`
     margin-right: 15px;
   }
   
+  /* Enhanced header dropdown styling */
+  .ql-toolbar .ql-header {
+    min-width: 120px;
+  }
+  
+  .ql-toolbar .ql-header .ql-picker-label {
+    font-weight: 600;
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+  }
+  
+  .ql-toolbar .ql-header .ql-picker-label:hover {
+    background-color: var(--surface-light);
+    color: var(--primary);
+  }
+  
+  .ql-toolbar .ql-header .ql-picker-options {
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--border-color);
+    background-color: var(--bg);
+    padding: 4px 0;
+  }
+  
+  .ql-toolbar .ql-header .ql-picker-item {
+    padding: 8px 16px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    margin: 2px 8px;
+  }
+  
+  .ql-toolbar .ql-header .ql-picker-item:hover {
+    background-color: var(--primary-light);
+    color: var(--primary-dark);
+  }
+  
+  .ql-toolbar .ql-header .ql-picker-item.ql-selected {
+    background-color: var(--primary);
+    color: white;
+  }
+  
+  /* Header dropdown item styling with visual hierarchy */
+  .ql-toolbar .ql-header .ql-picker-item[data-value="1"] {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #1a202c;
+  }
+  
+  .ql-toolbar .ql-header .ql-picker-item[data-value="2"] {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #2d3748;
+  }
+  
+  .ql-toolbar .ql-header .ql-picker-item[data-value="3"] {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #4a5568;
+  }
+  
+  .ql-toolbar .ql-header .ql-picker-item[data-value="4"] {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #4a5568;
+  }
+  
+  .ql-toolbar .ql-header .ql-picker-item[data-value="5"] {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #718096;
+  }
+  
+  .ql-toolbar .ql-header .ql-picker-item[data-value="6"] {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  
   /* Toolbar button styling */
   .ql-toolbar button {
     padding: 5px !important;
@@ -268,6 +351,74 @@ const EditorContainer = styled.div`
   
   .ql-editor a:hover {
     color: var(--primary-dark);
+  }
+  
+  /* Heading styles */
+  .ql-editor h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin: 1.5rem 0 1rem 0;
+    color: #1a202c;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  
+  .ql-editor h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.3;
+    margin: 1.25rem 0 0.75rem 0;
+    color: #2d3748;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  
+  .ql-editor h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin: 1rem 0 0.5rem 0;
+    color: #4a5568;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  
+  .ql-editor h4 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin: 0.875rem 0 0.5rem 0;
+    color: #4a5568;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  
+  .ql-editor h5 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.5;
+    margin: 0.75rem 0 0.375rem 0;
+    color: #718096;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  
+  .ql-editor h6 {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.5;
+    margin: 0.625rem 0 0.25rem 0;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  
+  /* Heading hover effects */
+  .ql-editor h1:hover,
+  .ql-editor h2:hover,
+  .ql-editor h3:hover,
+  .ql-editor h4:hover,
+  .ql-editor h5:hover,
+  .ql-editor h6:hover {
+    color: var(--primary);
+    transition: color 0.2s ease;
   }
 `;
 
@@ -560,7 +711,7 @@ const QuillEditor = ({
   const modules = useMemo(() => ({
     toolbar: {
       container: [
-        [{ 'header': [1, 2, 3, false] }],
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
         ['bold', 'italic', 'underline', 'strike'],
         [{ 'color': [] }, { 'background': [] }],
         [{ 'list': 'ordered' }, { 'list': 'bullet' }],

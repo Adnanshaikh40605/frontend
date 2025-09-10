@@ -9,6 +9,29 @@ import { handleApiError, validateFileUpload, retryRequest } from '../utils/error
 // Determine if we're in development mode
 const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
+// Dashboard API helper
+export const dashboardAPI = {
+  getStats: async () => {
+    try {
+      const headers = await getHeaders();
+      const response = await fetch(`${ENDPOINTS.BASE_URL}/api/dashboard/stats/`, {
+        method: 'GET',
+        headers: headers,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      throw error;
+    }
+  }
+};
+
 // Media API helper for working with images
 export const mediaAPI = {
   getImageUrl: (path) => {
