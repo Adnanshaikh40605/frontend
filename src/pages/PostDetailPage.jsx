@@ -180,7 +180,7 @@ const Modal = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 1004;
 `;
 
 const ModalContent = styled.div`
@@ -596,4 +596,4 @@ const PostDetailPage = () => {
   );
 };
 
-export default PostDetailPage; 
+export default PostDetailPage;

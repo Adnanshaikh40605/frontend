@@ -37,22 +37,22 @@ const CreateButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem 1.5rem;
-  background-color: #c53030;
-  color: white;
+  padding: var(--spacing-3) var(--spacing-6);
+  background-color: var(--primary);
+  color: var(--text-inverse);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition-smooth);
   
   svg {
-    margin-right: 0.5rem;
+    margin-right: var(--spacing-2);
     font-size: 20px;
   }
   
   &:hover {
-    background-color: #a02626;
+    background-color: var(--primary-hover);
     transform: translateY(-2px);
   }
   
@@ -64,8 +64,8 @@ const CreateButton = styled.button`
 // Tab container with horizontal scroll for mobile
 const TabsContainer = styled.div`
   display: flex;
-  border-bottom: 1px solid #dee2e6;
-  margin-bottom: 1.5rem;
+  border-bottom: var(--border);
+  margin-bottom: var(--spacing-6);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   
@@ -74,28 +74,28 @@ const TabsContainer = styled.div`
   }
   
   &::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: var(--surface-light);
   }
   
   &::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 4px;
+    background: var(--text-light);
+    border-radius: var(--radius-sm);
   }
 `;
 
 const Tab = styled.button`
-  padding: 0.75rem 1.25rem;
+  padding: var(--spacing-3) var(--spacing-5);
   background-color: transparent;
   border: none;
-  border-bottom: 3px solid ${props => props.$active ? '#c53030' : 'transparent'};
-  color: ${props => props.$active ? '#c53030' : '#6c757d'};
+  border-bottom: 3px solid ${props => props.$active ? 'var(--primary)' : 'transparent'};
+  color: ${props => props.$active ? 'var(--primary)' : 'var(--text-light)'};
   font-weight: ${props => props.$active ? 'bold' : 'normal'};
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--transition-smooth);
   white-space: nowrap;
   
   &:hover {
-    color: #a02626;
+    color: var(--primary-hover);
   }
 `;
 
@@ -112,12 +112,12 @@ const TableContainer = styled.div`
   }
   
   &::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: var(--surface-light);
   }
   
   &::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 4px;
+    background: var(--text-light);
+    border-radius: var(--radius-sm);
   }
 `;
 
@@ -128,30 +128,70 @@ const Table = styled.table`
 `;
 
 const Thead = styled.thead`
-  background-color: #f8f9fa;
+  background-color: var(--surface-light);
 `;
 
 const Th = styled.th`
-  padding: 1rem;
+  padding: var(--spacing-4);
   text-align: left;
-  border-bottom: 2px solid #dee2e6;
-  color: #495057;
+  border-bottom: 2px solid var(--border-dark);
+  color: var(--text-muted);
   font-weight: 600;
+  
+  &:nth-child(1) {
+    width: 40%;
+    min-width: 200px;
+  }
+  
+  &:nth-child(2) {
+    width: 25%;
+    min-width: 150px;
+  }
+  
+  &:nth-child(3) {
+    width: 15%;
+    min-width: 100px;
+  }
+  
+  &:nth-child(4) {
+    width: 20%;
+    min-width: 120px;
+  }
 `;
 
 const Tr = styled.tr`
   &:hover {
-    background-color: #f8f9fa;
+    background-color: var(--surface-light);
   }
   
   &:not(:last-child) {
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: var(--border-light);
   }
 `;
 
 const Td = styled.td`
-  padding: 1rem;
+  padding: var(--spacing-4);
   vertical-align: middle;
+  
+  &:nth-child(1) {
+    width: 40%;
+    min-width: 200px;
+  }
+  
+  &:nth-child(2) {
+    width: 25%;
+    min-width: 150px;
+  }
+  
+  &:nth-child(3) {
+    width: 15%;
+    min-width: 100px;
+  }
+  
+  &:nth-child(4) {
+    width: 20%;
+    min-width: 120px;
+  }
 `;
 
 // Tooltip component for action buttons
@@ -160,15 +200,15 @@ const Tooltip = styled.div`
   top: -30px;
   left: 50%;
   transform: translateX(-50%);
-  background-color: #333;
-  color: white;
-  padding: 5px 10px;
-  border-radius: 4px;
+  background-color: var(--text);
+  color: var(--text-inverse);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--radius-sm);
   font-size: 12px;
   white-space: nowrap;
   opacity: 0;
   visibility: hidden;
-  transition: all 0.2s ease;
+  transition: var(--transition-smooth);
   pointer-events: none;
   z-index: 10;
   
@@ -180,7 +220,7 @@ const Tooltip = styled.div`
     margin-left: -5px;
     border-width: 5px;
     border-style: solid;
-    border-color: #333 transparent transparent transparent;
+    border-color: var(--text) transparent transparent transparent;
   }
 `;
 
@@ -200,7 +240,7 @@ const ActionButton = styled.button`
   background-color: transparent;
   
   &:hover {
-    background-color: #f7fafc;
+    background-color: var(--surface);
     transform: translateY(-2px);
     
     ${Tooltip} {
@@ -221,10 +261,10 @@ const ActionButton = styled.button`
     font-size: 20px;
     color: ${props => {
       switch (props.$variant) {
-        case 'primary': return '#4299e1';
-        case 'success': return '#48bb78';
-        case 'danger': return '#f56565';
-        default: return '#718096';
+        case 'primary': return 'var(--accent)';
+        case 'success': return 'var(--success)';
+        case 'danger': return 'var(--danger)';
+        default: return 'var(--text-light)';
       }
     }};
   }
@@ -238,12 +278,12 @@ const ActionButtonsContainer = styled.div`
 
 // Improved message component for loading, errors, and empty states
 const Message = styled.div`
-  padding: 2rem;
+  padding: var(--spacing-8);
   text-align: center;
-  color: ${props => props.$error ? '#dc3545' : '#6c757d'};
-  background-color: ${props => props.$error ? '#f8d7da' : '#f8f9fa'};
-  border-radius: 4px;
-  margin-bottom: 1rem;
+  color: ${props => props.$error ? 'var(--danger)' : 'var(--text-light)'};
+  background-color: ${props => props.$error ? 'var(--danger-light)' : 'var(--surface-light)'};
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--spacing-4);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -255,10 +295,10 @@ const Message = styled.div`
 const Spinner = styled.div`
   border: 4px solid rgba(0, 0, 0, 0.1);
   border-radius: 50%;
-  border-top: 4px solid #007bff;
+  border-top: 4px solid var(--accent);
   width: 40px;
   height: 40px;
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-4);
   animation: spin 1s linear infinite;
   
   @keyframes spin {
@@ -272,33 +312,17 @@ const PostTitle = styled.div`
   font-weight: 500;
 `;
 
-const PostPosition = styled.div`
-  font-size: 0.875rem;
-  color: #6c757d;
-  margin-top: 0.25rem;
-  display: flex;
-  align-items: center;
-  
-  &::before {
-    content: '';
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background-color: #28a745;
-    margin-right: 0.5rem;
-  }
-`;
+
 
 // URL display with monospace font and better contrast
 const PostUrl = styled.div`
   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-  padding: 0.25rem 0.5rem;
-  background-color: #f1f3f5;
-  border-radius: 4px;
+  padding: var(--spacing-1) var(--spacing-2);
+  background-color: var(--surface-light);
+  border-radius: var(--radius-sm);
   font-size: 0.875rem;
-  color: #495057;
-  border: 1px solid #e9ecef;
+  color: var(--text-muted);
+  border: var(--border-light);
   word-break: break-all;
 `;
 
@@ -307,38 +331,38 @@ const Pagination = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 2rem;
+  margin-top: var(--spacing-8);
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--spacing-2);
 `;
 
 const PageButton = styled.button`
-  padding: 0.375rem 0.75rem;
-  border: 1px solid ${props => props.$active ? '#c53030' : '#e2e8f0'};
-  background-color: ${props => props.$active ? '#c53030' : 'white'};
-  color: ${props => props.$active ? 'white' : '#2d3748'};
-  border-radius: 6px;
+  padding: var(--spacing-2) var(--spacing-3);
+  border: 1px solid ${props => props.$active ? 'var(--primary)' : 'var(--border)'};
+  background-color: ${props => props.$active ? 'var(--primary)' : 'var(--bg)'};
+  color: ${props => props.$active ? 'var(--text-inverse)' : 'var(--text)'};
+  border-radius: var(--radius-md);
   cursor: ${props => props.$disabled ? 'not-allowed' : 'pointer'};
   opacity: ${props => props.$disabled ? 0.65 : 1};
-  transition: all 0.2s;
+  transition: var(--transition-smooth);
   
   &:hover:not(:disabled) {
-    background-color: ${props => props.$active ? '#a02626' : '#f7fafc'};
+    background-color: ${props => props.$active ? 'var(--primary-hover)' : 'var(--surface)'};
   }
 `;
 
 const RetryButton = styled.button`
-  padding: 0.5rem 1rem;
-  background-color: #c53030;
-  color: white;
+  padding: var(--spacing-2) var(--spacing-4);
+  background-color: var(--primary);
+  color: var(--text-inverse);
   border: none;
-  border-radius: 6px;
-  margin-top: 1rem;
+  border-radius: var(--radius-md);
+  margin-top: var(--spacing-4);
   cursor: pointer;
   font-weight: 500;
   
   &:hover {
-    background-color: #a02626;
+    background-color: var(--primary-hover);
   }
 `;
 
@@ -346,13 +370,13 @@ const RetryButton = styled.button`
 const StatusIndicator = styled.span`
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.75rem;
-  border-radius: 1rem;
+  padding: var(--spacing-1) var(--spacing-3);
+  border-radius: var(--radius-full);
   font-size: 0.75rem;
   font-weight: 600;
-  background-color: ${props => props.$published ? '#c6f6d5' : '#fed7d7'};
-  color: ${props => props.$published ? '#22543d' : '#742a2a'};
-  border: 1px solid ${props => props.$published ? '#9ae6b4' : '#feb2b2'};
+  background-color: ${props => props.$published ? 'var(--success-light)' : 'var(--danger-light)'};
+  color: ${props => props.$published ? 'var(--success)' : 'var(--danger)'};
+  border: 1px solid ${props => props.$published ? 'var(--success-border)' : 'var(--danger-border)'};
   
   &:before {
     content: '';
@@ -360,8 +384,8 @@ const StatusIndicator = styled.span`
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    margin-right: 0.5rem;
-    background-color: ${props => props.$published ? '#38a169' : '#e53e3e'};
+    margin-right: var(--spacing-2);
+    background-color: ${props => props.$published ? 'var(--success)' : 'var(--danger)'};
   }
 `;
 
@@ -635,7 +659,6 @@ const PostListPage = () => {
                   <Tr key={post.id}>
                     <Td>
                       <PostTitle>{post.title}</PostTitle>
-                      <PostPosition>POSITION: {post.position}</PostPosition>
                     </Td>
                     <Td>
                       <PostUrl>/{post.slug}</PostUrl>
@@ -653,7 +676,6 @@ const PostListPage = () => {
                           aria-label={`View ${post.title}`}
                         >
                           <PreviewIcon />
-                          <Tooltip>View</Tooltip>
                         </ActionButton>
                         <ActionButton 
                           $variant="success" 
@@ -661,7 +683,6 @@ const PostListPage = () => {
                           aria-label={`Edit ${post.title}`}
                         >
                           <EditIcon />
-                          <Tooltip>Edit</Tooltip>
                         </ActionButton>
                         <ActionButton 
                           $variant="danger" 
@@ -669,7 +690,6 @@ const PostListPage = () => {
                           aria-label={`Delete ${post.title}`}
                         >
                           <DeleteIcon />
-                          <Tooltip>Delete</Tooltip>
                         </ActionButton>
                       </ActionButtonsContainer>
                     </Td>
@@ -686,4 +706,4 @@ const PostListPage = () => {
   );
 };
 
-export default PostListPage; 
+export default PostListPage;

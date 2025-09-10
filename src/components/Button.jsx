@@ -69,121 +69,132 @@ const Button = styled.button`
   }
   
   ${props => props.$variant === 'primary' || !props.$variant && css`
-    background-color: #0066cc;
-    color: white;
+    background-color: var(--primary);
+    color: var(--primary-contrast);
     border: none;
     font-weight: 700;
     
     &:hover, &:focus {
-      background-color: #004c99;
+      background-color: var(--primary-hover);
       transform: translateY(-2px);
       box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
     }
     
     &:disabled {
-      background-color: #99c2ff;
+      background-color: var(--text-light);
+      opacity: 0.6;
       box-shadow: none;
     }
   `}
   
   ${props => props.$variant === 'secondary' && css`
-    background-color: #6c757d;
-    color: white;
+    background-color: var(--text-muted);
+    color: var(--primary-contrast);
     
     &:hover, &:focus {
-      background-color: #5a6268;
+      background-color: var(--text);
       transform: translateY(-2px);
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     }
     
     &:disabled {
-      background-color: #b6babe;
+      background-color: var(--text-light);
+      opacity: 0.6;
       box-shadow: none;
     }
   `}
   
   ${props => props.$variant === 'danger' && css`
-    background-color: #dc3545;
-    color: white;
+    background-color: var(--danger);
+    color: var(--primary-contrast);
     
     &:hover, &:focus {
-      background-color: #bd2130;
+      background-color: var(--danger);
+      filter: brightness(0.9);
       transform: translateY(-2px);
       box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
     }
     
     &:disabled {
-      background-color: #f1aeb5;
+      background-color: var(--danger-light);
+      opacity: 0.6;
       box-shadow: none;
     }
   `}
   
   ${props => props.$variant === 'success' && css`
-    background-color: #28a745;
-    color: white;
+    background-color: var(--success);
+    color: var(--primary-contrast);
     
     &:hover, &:focus {
-      background-color: #218838;
+      background-color: var(--success);
+      filter: brightness(0.9);
       transform: translateY(-2px);
       box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
     }
     
     &:disabled {
-      background-color: #a3cfbb;
+      background-color: var(--success-light);
+      opacity: 0.6;
       box-shadow: none;
     }
   `}
   
   ${props => props.$variant === 'outline' && css`
     background-color: ${props => props.$heroButton ? 'rgba(255, 255, 255, 0.15)' : 'transparent'};
-    color: ${props => props.$heroButton ? 'white' : '#0066cc'};
-    border-color: ${props => props.$heroButton ? 'white' : '#0066cc'};
+    color: ${props => props.$heroButton ? 'var(--primary-contrast)' : 'var(--primary)'};
+    border-color: ${props => props.$heroButton ? 'var(--primary-contrast)' : 'var(--primary)'};
     font-weight: 600;
     
     &:hover, &:focus {
-      background-color: ${props => props.$heroButton ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 102, 204, 0.08)'};
+      background-color: ${props => props.$heroButton ? 'rgba(255, 255, 255, 0.25)' : 'var(--primary)'};
+      color: ${props => props.$heroButton ? 'var(--primary-contrast)' : 'var(--primary-contrast)'};
       transform: translateY(-2px);
       box-shadow: ${props => props.$heroButton 
         ? '0 4px 8px rgba(0, 0, 0, 0.2)' 
-        : '0 4px 8px rgba(0, 102, 204, 0.15)'};
+        : 'var(--shadow-md)'};
     }
     
     &:disabled {
-      color: ${props => props.$heroButton ? 'rgba(255, 255, 255, 0.5)' : '#99c2ff'};
-      border-color: ${props => props.$heroButton ? 'rgba(255, 255, 255, 0.5)' : '#99c2ff'};
+      color: var(--text-light);
+      border-color: var(--text-light);
+      opacity: 0.6;
       box-shadow: none;
     }
   `}
   
   ${props => props.$variant === 'ghost' && css`
     background-color: transparent;
-    color: #0066cc;
+    color: var(--primary);
     border-color: transparent;
     box-shadow: none;
     
     &:hover, &:focus {
-      background-color: rgba(0, 102, 204, 0.08);
+      background-color: var(--surface);
     }
     
     &:disabled {
-      color: #99c2ff;
+      color: var(--text-light);
+      opacity: 0.6;
     }
   `}
   
   ${props => props.$variant === 'accent' && css`
-    background-color: #ffcc00;
-    color: #333;
+    background-color: var(--accent);
+    color: var(--accent-contrast);
     border: none;
     font-weight: 700;
     
     &:hover, &:focus {
-      background-color: #e6b800;
+      background-color: var(--accent);
+      filter: brightness(0.9);
       transform: translateY(-2px);
       box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
     }
     
     &:disabled {
-      background-color: #ffe680;
+      background-color: var(--accent-light);
+      opacity: 0.6;
       box-shadow: none;
     }
   `}
@@ -205,4 +216,4 @@ const Button = styled.button`
   `}
 `;
 
-export default Button; 
+export default Button;

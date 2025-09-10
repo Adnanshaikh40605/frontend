@@ -22,6 +22,7 @@ export const ENDPOINTS = {
   IMAGES: `${API_URL}/api/images/`,
   CATEGORIES: `${API_URL}/api/categories/`,
   CKEDITOR_UPLOAD: `${API_URL}/ckeditor5/image_upload/`,
+  QUILL_UPLOAD: `${API_URL}/api/upload/quill/`,
   COMMENT_COUNTS: `${API_URL}/api/comments/counts/`,
   PENDING_COUNT: `${API_URL}/api/comments/pending-count/`,
   BULK_APPROVE: `${API_URL}/api/comments/bulk_approve/`,

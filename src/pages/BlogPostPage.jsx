@@ -8,6 +8,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { formatDate } from '../utils/dateUtils';
 import { sanitizeBlogContent } from '../utils/sanitize';
 import { generateTableOfContents, renderTocHtml, makeHeadingsClickable } from '../utils/tocGenerator';
+
 import placeholderImage from '../assets/placeholder-image.js';
 import { postAPI, mediaAPI } from '../api';
 import usePostComments from '../hooks/usePostComments';
@@ -29,27 +30,27 @@ export const clearAllPostCache = () => {
 
 const MainContent = styled.main`
   max-width: 800px;
-  margin: 0 auto;
-  background: white;
-  border-radius: 8px;
-  padding: 2rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
+  margin: 64px auto 0;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-8);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--spacing-8);
 
   @media (max-width: 768px) {
-    padding: 1.5rem;
+    padding: var(--spacing-6);
   }
 `;
 
 const Breadcrumb = styled.div`
   display: flex;
-  gap: 0.5rem;
-  color: #718096;
+  gap: var(--spacing-2);
+  color: var(--text-light);
   font-size: 0.9rem;
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-4);
   
   a {
-    color: #c53030;
+    color: var(--primary);
     text-decoration: none;
     
     &:hover {
@@ -59,14 +60,14 @@ const Breadcrumb = styled.div`
 `;
 
 const PostHeader = styled.div`
-  margin-bottom: 2rem;
+  margin-bottom: var(--spacing-8);
   text-align: center;
 `;
 
 const PostTitle = styled.h1`
   font-size: 2.2rem;
-  color: #2d3748;
-  margin-bottom: 1rem;
+  color: var(--text);
+  margin-bottom: var(--spacing-4);
   line-height: 1.3;
   font-weight: 600;
   font-family: 'Lexend', sans-serif;
@@ -75,30 +76,30 @@ const PostTitle = styled.h1`
 const PostMeta = styled.div`
   display: flex;
   justify-content: center;
-  gap: 1rem;
-  color: #718096;
+  gap: var(--spacing-4);
+  color: var(--text-light);
   font-size: 0.9rem;
-  margin-bottom: 2rem;
+  margin-bottom: var(--spacing-8);
 `;
 
 const PostDate = styled.span`
-  color: #718096;
+  color: var(--text-light);
 `;
 
 const ReadTime = styled.span`
-  color: #718096;
+  color: var(--text-light);
   &:before {
     content: "•";
-    margin: 0 0.5rem;
+    margin: 0 var(--spacing-2);
   }
 `;
 
 const FeaturedImageContainer = styled.div`
   width: 100%;
   position: relative;
-  margin-bottom: 2rem;
-  background-color: #f3f3f3;
-  border-radius: 8px;
+  margin-bottom: var(--spacing-8);
+  background-color: var(--surface-light);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   
   &::before {
@@ -115,59 +116,59 @@ const FeaturedImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 `;
 
 const PostContent = styled.div`
   font-size: 1.05rem;
   line-height: 1.8;
-  color: #444;
+  color: var(--text);
   font-family: 'Lexend', sans-serif;
   letter-spacing: -0.01em;
   
   h2 {
     font-size: 1.6rem;
-    margin: 2rem 0 1rem;
-    color: #333;
+    margin: var(--spacing-8) 0 var(--spacing-4);
+    color: var(--text);
     font-weight: 600;
     letter-spacing: -0.02em;
   }
 
   h3 {
     font-size: 1.4rem;
-    margin: 1.8rem 0 0.8rem;
-    color: #333;
+    margin: var(--spacing-7) 0 var(--spacing-3);
+    color: var(--text);
     font-weight: 600;
     letter-spacing: -0.02em;
   }
   
   p {
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--spacing-6);
   }
   
   ul, ol {
-    margin-bottom: 1.5rem;
-    padding-left: 1.5rem;
+    margin-bottom: var(--spacing-6);
+    padding-left: var(--spacing-6);
   }
   
   li {
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--spacing-2);
   }
 
   img {
     max-width: 100%;
     height: auto;
-    border-radius: 8px;
-    margin: 1.5rem 0;
+    border-radius: var(--radius-lg);
+    margin: var(--spacing-6) 0;
   }
 
   blockquote {
-    border-left: 4px solid #ffcc00;
-    padding-left: 1rem;
-    margin: 1.5rem 0;
+    border-left: 4px solid var(--primary);
+    padding-left: var(--spacing-4);
+    margin: var(--spacing-6) 0;
     font-style: italic;
-    color: #555;
+    color: var(--text-light);
   }
 
   /* CKEditor 5 specific styles */
@@ -183,8 +184,8 @@ const PostContent = styled.div`
     
     figcaption {
       font-size: 0.9rem;
-      color: #666;
-      margin-top: 0.5rem;
+      color: var(--text-light);
+      margin-top: var(--spacing-2);
     }
   }
   
@@ -198,35 +199,35 @@ const PostContent = styled.div`
       border-collapse: collapse;
       
       th, td {
-        border: 1px solid #e0e0e0;
-        padding: 0.5rem;
+        border: 1px solid var(--border-light);
+        padding: var(--spacing-2);
       }
       
       th {
-        background-color: #f5f5f5;
+        background-color: var(--surface-light);
         font-weight: 600;
       }
       
       tr:nth-child(even) {
-        background-color: #f9f9f9;
+        background-color: var(--surface-light);
       }
     }
     
     figcaption {
       font-style: italic;
-      margin-top: 0.5rem;
+      margin-top: var(--spacing-2);
       text-align: center;
       font-size: 0.9rem;
-      color: #666;
+      color: var(--text-light);
     }
   }
   
   pre {
-    background-color: #f5f5f5;
-    padding: 1rem;
-    border-radius: 4px;
+    background-color: var(--surface-light);
+    padding: var(--spacing-4);
+    border-radius: var(--radius-sm);
     overflow-x: auto;
-    margin: 1.5rem 0;
+    margin: var(--spacing-6) 0;
     
     code {
       font-family: 'Courier New', Courier, monospace;
@@ -235,18 +236,18 @@ const PostContent = styled.div`
   }
   
   code {
-    background-color: #f5f5f5;
-    padding: 0.2rem 0.4rem;
-    border-radius: 3px;
+    background-color: var(--surface-light);
+    padding: var(--spacing-1) var(--spacing-2);
+    border-radius: var(--radius-xs);
     font-family: 'Courier New', Courier, monospace;
     font-size: 0.9rem;
   }
   
   .table-of-contents {
-    background-color: #f9f9f9;
-    padding: 1rem;
-    border-radius: 4px;
-    margin: 2rem 0;
+    background-color: var(--surface-light);
+    padding: var(--spacing-4);
+    border-radius: var(--radius-sm);
+    margin: var(--spacing-8) 0;
     
     ol, ul {
       margin-bottom: 0;
@@ -255,56 +256,56 @@ const PostContent = styled.div`
   
   iframe {
     max-width: 100%;
-    margin: 1.5rem 0;
+    margin: var(--spacing-6) 0;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
   }
   
   .article-navigation-section {
-    margin: 3rem 0 2rem;
-    border-top: 1px solid #eaeaea;
-    padding-top: 2rem;
+    margin: var(--spacing-12) 0 var(--spacing-8);
+    border-top: 1px solid var(--border-light);
+    padding-top: var(--spacing-8);
   }
   
   .toc-description {
     text-align: center;
-    color: #666;
+    color: var(--text-light);
     font-size: 0.9rem;
-    margin-top: 1rem;
+    margin-top: var(--spacing-4);
     font-style: italic;
   }
 `;
 
 const ShareSection = styled.div`
-  margin: 3rem 0;
-  padding: 1.5rem;
-  background: #f8f8f8;
-  border-radius: 8px;
+  margin: var(--spacing-12) 0;
+  padding: var(--spacing-6);
+  background: var(--surface-light);
+  border-radius: var(--radius-lg);
   text-align: center;
   
   h3 {
     font-size: 1.1rem;
-    margin-bottom: 1rem;
-    color: #333;
+    margin-bottom: var(--spacing-4);
+    color: var(--text);
   }
 `;
 
 const ShareButtons = styled.div`
   display: flex;
   justify-content: center;
-  gap: 1rem;
+  gap: var(--spacing-4);
 `;
 
 const ShareButton = styled.button`
-  padding: 0.6rem 1.2rem;
+  padding: var(--spacing-2) var(--spacing-5);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-weight: 500;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  transition: opacity 0.2s;
+  gap: var(--spacing-2);
+  transition: var(--transition-smooth);
   font-size: 0.9rem;
   
   &:hover {
@@ -313,44 +314,44 @@ const ShareButton = styled.button`
   
   &.twitter {
     background-color: #1DA1F2;
-    color: white;
+    color: var(--text-inverse);
   }
   
   &.facebook {
     background-color: #4267B2;
-    color: white;
+    color: var(--text-inverse);
   }
   
   &.linkedin {
     background-color: #0077B5;
-    color: white;
+    color: var(--text-inverse);
   }
 `;
 
 const RelatedPostsSection = styled.div`
-  margin-top: 3rem;
+  margin-top: var(--spacing-12);
   
   h2 {
     font-size: 1.6rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--spacing-6);
     text-align: center;
-    color: #333;
+    color: var(--text);
   }
 `;
 
 const RelatedPostsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-top: 1.5rem;
+  gap: var(--spacing-6);
+  margin-top: var(--spacing-6);
 `;
 
 const RelatedPostCard = styled.div`
-  background: white;
-  border-radius: 8px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-smooth);
   
   &:hover {
     transform: translateY(-5px);
@@ -364,35 +365,35 @@ const RelatedPostImage = styled.img`
 `;
 
 const RelatedPostContent = styled.div`
-  padding: 1rem;
+  padding: var(--spacing-4);
 `;
 
 const RelatedPostTitle = styled.h3`
   font-size: 1.1rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--spacing-2);
   
   a {
-    color: #333;
+    color: var(--text);
     text-decoration: none;
     
     &:hover {
-      color: #0066cc;
+      color: var(--primary);
     }
   }
 `;
 
 const RelatedPostMeta = styled.div`
   font-size: 0.8rem;
-  color: #666;
+  color: var(--text-light);
 `;
 
 const Message = styled.p`
   text-align: center;
-  color: #666;
-  padding: 2rem;
-  background-color: #f8f9f9;
-  border-radius: 8px;
-  margin: 2rem 0;
+  color: var(--text-light);
+  padding: var(--spacing-8);
+  background-color: var(--surface-light);
+  border-radius: var(--radius-lg);
+  margin: var(--spacing-8) 0;
 `;
 
 const PageSubtitle = styled.p`
@@ -458,12 +459,12 @@ const FadeIn = styled.div`
 // Add a loading overlay component
 const LoadingOverlay = styled.div`
   position: fixed;
-  top: 0;
+  top: 64px;
   left: 0;
   right: 0;
   bottom: 0;
   background-color: rgba(255, 255, 255, 0.8);
-  z-index: 1000;
+  z-index: 999;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -493,7 +494,7 @@ const CommentsSection = styled.div`
   border-radius: 8px;
   padding: 2rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  border-top: 3px solid #c53030;
+  border-top: 3px solid #0066cc;
 `;
 
 const CommentsHeader = styled.h2`
@@ -508,7 +509,7 @@ const CommentsList = styled.div`
 `;
 
 const LoadMoreButton = styled.button`
-  background-color: #c53030;
+  background-color: #0066cc;
   color: white;
   border: none;
   border-radius: 6px;
@@ -863,7 +864,7 @@ const BlogPostPage = () => {
         <PostContent 
           ref={contentRef}
           className="ck-content"
-          dangerouslySetInnerHTML={{ __html: sanitizeBlogContent(post.content) }} 
+          dangerouslySetInnerHTML={{ __html: post.content }}
         />
         
         {/* Display Table of Contents if there are headings */}

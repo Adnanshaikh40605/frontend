@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
-import RichTextEditor from '../components/RichTextEditor';
+import QuillEditor from '../components/QuillEditor';
 import Button from '../components/Button';
 import DashboardLayout from '../components/DashboardLayout';
 import CategoryModal from '../components/CategoryModal';
@@ -13,25 +13,25 @@ import CloseIcon from '@mui/icons-material/Close';
 const BackLink = styled(Link)`
   display: inline-flex;
   align-items: center;
-  color: #c53030;
+  color: var(--primary);
   text-decoration: none;
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--spacing-6);
   font-weight: 500;
   transition: color 0.2s;
   
   &:hover {
     text-decoration: underline;
-    color: #a02626;
+    color: var(--primary-dark);
   }
 `;
 
 const Form = styled.form`
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: var(--spacing-8);
   
   @media (max-width: 768px) {
-    gap: 1.5rem;
+    gap: var(--spacing-6);
   }
 `;
 
@@ -42,32 +42,32 @@ const FormGroup = styled.div`
 
 const Label = styled.label`
   font-weight: 600;
-  margin-bottom: 0.75rem;
-  color: #333;
+  margin-bottom: var(--spacing-3);
+  color: var(--text);
   font-size: 1rem;
 `;
 
 const Input = styled.input`
-  padding: 0.9rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  padding: var(--spacing-4);
+  border: var(--border);
+  border-radius: var(--radius-md);
   font-size: 1rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: var(--transition-smooth);
   
   &:focus {
     outline: none;
-    border-color: #c53030;
-    box-shadow: 0 0 0 2px rgba(197, 48, 48, 0.25);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-light);
   }
   
   &[type="file"] {
-    padding: 0.7rem;
-    background-color: #f8f9fa;
+    padding: var(--spacing-3);
+    background-color: var(--surface-light);
     cursor: pointer;
-    border: 1px dashed #dce0e5;
+    border: 1px dashed var(--border-color);
     
     &:hover {
-      background-color: #f1f3f5;
+      background-color: var(--surface);
     }
   }
   
@@ -81,29 +81,29 @@ const Input = styled.input`
 const Checkbox = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem;
-  border-radius: 6px;
+  gap: var(--spacing-3);
+  padding: var(--spacing-2);
+  border-radius: var(--radius-md);
   
   &:hover {
-    background-color: #f8f9fa;
+    background-color: var(--surface-light);
   }
 `;
 
 const ImagePreviewContainer = styled.div`
-  margin-top: 1.25rem;
+  margin-top: var(--spacing-5);
 `;
 
 const ImagePreview = styled.div`
   width: 100%;
   max-width: 300px;
-  background-color: #f8f9fa;
-  border: 1px solid #dce0e5;
-  border-radius: 6px;
-  padding: 0.5rem;
+  background-color: var(--surface-light);
+  border: var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-2);
   position: relative;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-smooth);
   
   &:hover {
     transform: translateY(-2px);
@@ -115,7 +115,7 @@ const PreviewImageContainer = styled.div`
   width: 100%;
   padding-top: 56.25%; /* 16:9 aspect ratio */
   overflow: hidden;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 `;
 
 const PreviewImage = styled.img`
@@ -126,7 +126,7 @@ const PreviewImage = styled.img`
   height: 100%;
   object-fit: cover;
   object-position: center;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   display: block;
 `;
 
@@ -137,15 +137,15 @@ const RemoveButton = styled.button`
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background-color: #dc3545;
-  color: white;
+  background-color: var(--danger);
+  color: var(--text-inverse);
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  transition: background-color 0.2s;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-smooth);
   padding: 0;
   
   svg {
@@ -153,50 +153,37 @@ const RemoveButton = styled.button`
   }
   
   &:hover {
-    background-color: #c82333;
+    background-color: var(--danger-dark);
   }
 `;
 
-const AdditionalImagesContainer = styled.div`
-  margin-top: 1.25rem;
-`;
 
-const AdditionalImagesGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 1.25rem;
-  margin-top: 1rem;
-`;
-
-const ImageContainer = styled.div`
-  position: relative;
-`;
 
 const ErrorContainer = styled.div`
-  padding: 1rem;
-  background-color: #f8d7da;
-  border: 1px solid #f5c6cb;
-  border-radius: 6px;
-  margin-bottom: 1.5rem;
+  padding: var(--spacing-4);
+  background-color: var(--danger-light);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-6);
 `;
 
 const SuccessContainer = styled.div`
-  padding: 1rem;
-  background-color: #d4edda;
-  border: 1px solid #c3e6cb;
-  border-radius: 6px;
-  margin-bottom: 1.5rem;
+  padding: var(--spacing-4);
+  background-color: var(--success-light);
+  border: 1px solid var(--success-border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-6);
 `;
 
 const SuccessMessage = styled.p`
-  color: #155724;
+  color: var(--success-dark);
   font-size: 0.875rem;
   margin: 0;
   font-weight: 500;
 `;
 
 const ErrorMessage = styled.p`
-  color: #721c24;
+  color: var(--danger-dark);
   font-size: 0.875rem;
   margin: 0;
   font-weight: 500;
@@ -204,8 +191,8 @@ const ErrorMessage = styled.p`
 
 const ButtonContainer = styled.div`
   display: flex;
-  gap: 1.25rem;
-  margin-top: 1rem;
+  gap: var(--spacing-5);
+  margin-top: var(--spacing-4);
   
   @media (max-width: 576px) {
     flex-direction: column;
@@ -213,11 +200,11 @@ const ButtonContainer = styled.div`
 `;
 
 const StyledButton = styled(Button)`
-  padding: 0.75rem 1.5rem;
+  padding: var(--spacing-3) var(--spacing-6);
   font-weight: 600;
   font-size: 1rem;
-  border-radius: 6px;
-  transition: transform 0.2s;
+  border-radius: var(--radius-md);
+  transition: var(--transition-smooth);
   
   &:hover:not(:disabled) {
     transform: translateY(-2px);
@@ -231,25 +218,27 @@ const StyledButton = styled(Button)`
 const ImageUploadLabel = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--spacing-2);
   
   .upload-hint {
     font-size: 0.875rem;
-    color: #6c757d;
-    margin-top: 0.25rem;
+    color: var(--text-light);
+    margin-top: var(--spacing-1);
   }
 `;
 
 const ToggleSwitch = styled.label`
   position: relative;
   display: inline-block;
-  width: 46px;
-  height: 24px;
+  width: 52px;
+  height: 28px;
+  cursor: pointer;
   
   input {
     opacity: 0;
     width: 0;
     height: 0;
+    position: absolute;
   }
   
   .slider {
@@ -259,46 +248,80 @@ const ToggleSwitch = styled.label`
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #ccc;
-    transition: 0.3s;
-    border-radius: 24px;
+    background-color: black;
+    transition: all var(--transition-base);
+    border-radius: 28px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
   }
   
   .slider:before {
     position: absolute;
     content: "";
-    height: 18px;
-    width: 18px;
+    height: 22px;
+    width: 22px;
     left: 3px;
-    bottom: 3px;
+    top: 3px;
     background-color: white;
-    transition: 0.3s;
+    transition: all var(--transition-base);
     border-radius: 50%;
+    box-shadow: var(--shadow-sm);
   }
   
   input:checked + .slider {
-    background-color: #0d6efd;
+    background-color: skyblue;
   }
   
   input:focus + .slider {
-    box-shadow: 0 0 1px #0d6efd;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1), 0 0 0 3px var(--focus-ring);
   }
   
   input:checked + .slider:before {
-    transform: translateX(22px);
+    transform: translateX(24px);
+  }
+  
+  &:hover .slider {
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15);
   }
 `;
 
 const PublishOption = styled.div`
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--spacing-4);
+  padding: var(--spacing-4);
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-base);
+  
+  &:hover {
+    border-color: var(--border-dark);
+    box-shadow: var(--shadow-sm);
+  }
+`;
+
+const PublishOptionContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+`;
+
+const PublishOptionTitle = styled.div`
+  font-weight: 600;
+  color: var(--text);
+  font-size: 1rem;
+`;
+
+const PublishOptionDescription = styled.div`
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.4;
 `;
 
 const SectionDivider = styled.hr`
   border: 0;
   height: 1px;
-  background-color: #e9ecef;
+  background-color: var(--border-color);
   margin: 0;
 `;
 
@@ -312,71 +335,71 @@ const SlugValidationMessage = styled.div`
   top: 50%;
   transform: translateY(-50%);
   font-size: 0.8rem;
-  color: ${props => props.$isValid ? '#28a745' : '#dc3545'};
+  color: ${props => props.$isValid ? 'var(--success)' : 'var(--danger)'};
   display: flex;
   align-items: center;
 `;
 
 const SlugInputWithValidation = styled(Input)`
-  padding-right: ${props => props.$showValidation ? '150px' : '0.9rem'};
+  padding-right: ${props => props.$showValidation ? '150px' : 'var(--spacing-4)'};
   border-color: ${props => {
-    if (!props.$touched) return '#dce0e5';
-    return props.$isValid ? '#28a745' : '#dc3545';
+    if (!props.$touched) return 'var(--border-color)';
+    return props.$isValid ? 'var(--success)' : 'var(--danger)';
   }};
   
   &:focus {
     border-color: ${props => {
-      if (!props.$touched) return '#80bdff';
-      return props.$isValid ? '#28a745' : '#dc3545';
-    }};
+    if (!props.$touched) return 'var(--primary)';
+    return props.$isValid ? 'var(--success)' : 'var(--danger)';
+  }};
     box-shadow: 0 0 0 2px ${props => {
-      if (!props.$touched) return 'rgba(0, 123, 255, 0.25)';
-      return props.$isValid ? 'rgba(40, 167, 69, 0.25)' : 'rgba(220, 53, 69, 0.25)';
-    }};
+    if (!props.$touched) return 'var(--primary-light)';
+    return props.$isValid ? 'var(--success-light)' : 'var(--danger-light)';
+  }};
   }
 `;
 
 // Category Selection Styles
 const CategorySelectionContainer = styled.div`
   display: flex;
-  gap: 0.75rem;
+  gap: var(--spacing-3);
   align-items: stretch;
 `;
 
 const CategorySelect = styled.select`
   flex: 1;
-  padding: 0.9rem;
-  border: 1px solid #dce0e5;
-  border-radius: 6px;
+  padding: var(--spacing-4);
+  border: var(--border);
+  border-radius: var(--radius-md);
   font-size: 1rem;
   font-family: inherit;
-  background-color: white;
+  background-color: var(--surface);
   cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: var(--transition-smooth);
 
   &:focus {
     outline: none;
-    border-color: #80bdff;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-light);
   }
 
   &:disabled {
-    background-color: #f8f9fa;
+    background-color: var(--surface-light);
     cursor: not-allowed;
     opacity: 0.7;
   }
 `;
 
 const AddCategoryButton = styled.button`
-  padding: 0.9rem 1.2rem;
-  background: linear-gradient(135deg, #c53030, #a02626);
-  color: white;
+  padding: var(--spacing-4) var(--spacing-5);
+  background: var(--primary);
+  color: var(--text-inverse);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition-smooth);
   white-space: nowrap;
   display: flex;
   align-items: center;
@@ -384,9 +407,9 @@ const AddCategoryButton = styled.button`
   min-width: 100px;
 
   &:hover:not(:disabled) {
-    background: linear-gradient(135deg, #a02626, #822020);
+    background: var(--primary-dark);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(197, 48, 48, 0.3);
+    box-shadow: var(--shadow-md);
   }
 
   &:active {
@@ -394,7 +417,7 @@ const AddCategoryButton = styled.button`
   }
 
   &:disabled {
-    background: #718096;
+    background: var(--text-light);
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
@@ -403,8 +426,8 @@ const AddCategoryButton = styled.button`
 
 const CategoryHelpText = styled.div`
   font-size: 0.8rem;
-  color: #6c757d;
-  margin-top: 0.5rem;
+  color: var(--text-light);
+  margin-top: var(--spacing-2);
   font-style: italic;
 `;
 
@@ -425,20 +448,20 @@ const SmallSpinner = styled.span`
 const Sidebar = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: var(--spacing-8);
 `;
 
 const SectionTitle = styled.h3`
   font-size: 1.25rem;
   font-weight: 600;
-  color: #333;
-  margin-bottom: 1rem;
-  border-bottom: 2px solid #e9ecef;
-  padding-bottom: 0.5rem;
+  color: var(--text);
+  margin-bottom: var(--spacing-4);
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: var(--spacing-2);
 `;
 
 const EditorSection = styled.div`
-  margin: 2rem 0;
+  margin: var(--spacing-8) 0;
 `;
 
 const PostFormPage = () => {
@@ -455,8 +478,7 @@ const PostFormPage = () => {
   });
   const [featuredImage, setFeaturedImage] = useState(null);
   const [featuredImagePreview, setFeaturedImagePreview] = useState('');
-  const [additionalImages, setAdditionalImages] = useState([]);
-  const [additionalImagePreviews, setAdditionalImagePreviews] = useState([]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -472,23 +494,23 @@ const PostFormPage = () => {
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(false);
-  
+
   useEffect(() => {
     // If slug or id is provided, fetch the post data for editing
     if (slug || id) {
       setIsEdit(true);
       fetchPost();
     }
-    
+
     // Always fetch categories
     fetchCategories();
   }, [slug, id]);
-  
+
   const fetchCategories = async () => {
     try {
       setCategoriesLoading(true);
       const response = await categoriesAPI.getAll();
-      
+
       if (response && response.results) {
         setCategories(response.results);
       } else if (response && Array.isArray(response)) {
@@ -506,12 +528,12 @@ const PostFormPage = () => {
       setCategoriesLoading(false);
     }
   };
-  
+
   const fetchPost = async () => {
     try {
       setLoading(true);
       let data;
-      
+
       // Try to get the post using the available identifier
       if (slug) {
         // Use getBySlug if slug is available (preferred)
@@ -521,12 +543,18 @@ const PostFormPage = () => {
         // Fallback to getById if only ID is available
         data = await postAPI.getById(id);
         setPostIdentifier(data.slug);
-        
+
         // Update the URL to use the slug instead of ID
         navigate(`/admin/posts/${data.slug}/edit`, { replace: true });
       }
-      
+
       if (data) {
+        console.log('PostFormPage: Fetched post data:', data);
+        console.log('PostFormPage: Post content:', data.content);
+        console.log('PostFormPage: Post content type:', typeof data.content);
+        console.log('PostFormPage: Post content length:', data.content?.length);
+        console.log('PostFormPage: Post content preview:', data.content?.substring(0, 200));
+
         setPost({
           title: data.title || '',
           slug: data.slug || '',
@@ -536,17 +564,14 @@ const PostFormPage = () => {
           featured: data.featured || false,
           category: data.category ? data.category.id : null,
         });
-        
+
         if (data.featured_image) {
           setFeaturedImagePreview(data.featured_image);
         }
-        
-        if (data.images && data.images.length > 0) {
-          const previews = data.images.map(img => img.image);
-          setAdditionalImagePreviews(previews);
-        }
+
+
       }
-      
+
       setLoading(false);
     } catch (err) {
       console.error('Error fetching post:', err);
@@ -554,16 +579,16 @@ const PostFormPage = () => {
       setLoading(false);
     }
   };
-  
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
+
     if (type === 'checkbox') {
       setPost(prev => ({ ...prev, [name]: checked }));
     } else {
       setPost(prev => ({ ...prev, [name]: value }));
     }
-    
+
     // Auto-generate slug from title if slug hasn't been manually edited
     if (name === 'title' && !slugEdited) {
       const generatedSlug = slugify(value, {
@@ -572,23 +597,23 @@ const PostFormPage = () => {
         remove: /[*+~.()'"!:@]/g, // Remove specific characters
         trim: true          // Trim leading/trailing spaces
       });
-      
+
       // Truncate slug to fit database constraints (max 250 characters)
       const truncatedSlug = generatedSlug.substring(0, 250);
-      
+
       setPost(prev => ({ ...prev, slug: truncatedSlug }));
     }
   };
-  
+
   const checkSlugUniqueness = async (slug) => {
     if (!slug) return;
-    
+
     try {
       setSlugValidation(prev => ({ ...prev, isChecking: true }));
-      
+
       // Make API call to check if slug exists
       const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/posts/${slug}/`);
-      
+
       if (response.status === 404) {
         // Slug doesn't exist, it's valid
         setSlugValidation({
@@ -599,7 +624,7 @@ const PostFormPage = () => {
       } else if (response.ok) {
         // Slug exists, check if it's the current post
         const data = await response.json();
-        
+
         if (isEdit && data.id === parseInt(slug)) {
           // It's the current post, so slug is valid
           setSlugValidation({
@@ -626,11 +651,11 @@ const PostFormPage = () => {
       });
     }
   };
-  
+
   const handleSlugChange = (e) => {
     setSlugEdited(true);
     handleChange(e);
-    
+
     // Debounce slug check
     const slug = e.target.value;
     if (slug) {
@@ -638,25 +663,25 @@ const PostFormPage = () => {
       if (window.slugCheckTimeout) {
         clearTimeout(window.slugCheckTimeout);
       }
-      
+
       // Set a new timeout
       window.slugCheckTimeout = setTimeout(() => {
         checkSlugUniqueness(slug);
       }, 500); // Wait 500ms after typing stops
     }
   };
-  
+
   // Add the onImageUpload handler function
   const handleImageUpload = async (file) => {
     try {
       // Create a temporary URL for the image
       const objectUrl = URL.createObjectURL(file);
-      
+
       // In a real implementation, you would upload the file to your server
       // and return the URL of the uploaded image
       // For now, we'll just return the temporary URL
       return objectUrl;
-      
+
       // Example of a real implementation:
       // const formData = new FormData();
       // formData.append('image', file);
@@ -671,41 +696,31 @@ const PostFormPage = () => {
       return null;
     }
   };
-  
-  // Process content to ensure Lexend font is applied
+
+  // Process content - now handles plain text instead of HTML
   const processContent = (content) => {
-    // Create temporary container to process HTML
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = content;
-    
-    // Apply Lexend font to all text elements
-    const textElements = tempDiv.querySelectorAll('p, h1, h2, h3, h4, h5, h6, span, div, li, td, th');
-    textElements.forEach(el => {
-      if (!el.style.fontFamily || !el.style.fontFamily.includes('Lexend')) {
-        el.style.fontFamily = '"Lexend", sans-serif';
-      }
-    });
-    
-    return tempDiv.innerHTML;
+    // With plain text editor, we don't need to process HTML
+    // Just return the content as-is since it's already plain text
+    return content || '';
   };
-  
-  // Handle editor content change with font processing
+
+  // Handle editor content change
   const handleEditorChange = (content) => {
     const processedContent = processContent(content);
     setPost(prev => ({ ...prev, content: processedContent }));
-    
+
     // Clear any success message that might be showing
     // This prevents "Post updated successfully" from showing when only editing content
     if (success) {
       setSuccess('');
     }
   };
-  
+
   const handleFeaturedImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setFeaturedImage(file);
-      
+
       // Create preview
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -714,63 +729,44 @@ const PostFormPage = () => {
       reader.readAsDataURL(file);
     }
   };
-  
+
   const handleRemoveFeaturedImage = () => {
     setFeaturedImage(null);
     setFeaturedImagePreview('');
-    
+
     // If we're editing, also clear the image from the post object
     if (isEdit) {
       setPost(prev => ({ ...prev, featured_image: null }));
     }
   };
-  
-  const handleAdditionalImagesChange = (e) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
-      setAdditionalImages(prev => [...prev, ...files]);
-      
-      // Create previews
-      files.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          setAdditionalImagePreviews(prev => [...prev, event.target.result]);
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-  };
-  
-  const handleRemoveAdditionalImage = (index) => {
-    setAdditionalImages(prev => prev.filter((_, i) => i !== index));
-    setAdditionalImagePreviews(prev => prev.filter((_, i) => i !== index));
-  };
+
+
 
   const handleCategoryCreated = async (categoryData) => {
     try {
       setLoadingCategories(true);
-      
+
       // Create the category via API
       const newCategory = await categoriesAPI.create(categoryData);
-      
+
       // Add the new category to the list
       setCategories(prev => [...prev, newCategory]);
-      
+
       // Automatically select the new category
       setPost(prev => ({
         ...prev,
         category: newCategory.id
       }));
-      
+
       // Show success message
       setSuccess(`Category "${newCategory.name}" created successfully!`);
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(''), 3000);
-      
+
     } catch (error) {
       console.error('Error creating category:', error);
-      
+
       // Handle specific error cases
       if (error.message && error.message.includes('already exists')) {
         throw new Error('A category with this name already exists');
@@ -783,11 +779,11 @@ const PostFormPage = () => {
       setLoadingCategories(false);
     }
   };
-  
+
   const validate = () => {
     let isValid = true;
     let errorMessage = '';
-    
+
     if (!post.title.trim()) {
       errorMessage = 'Title is required';
       isValid = false;
@@ -801,7 +797,7 @@ const PostFormPage = () => {
       errorMessage = 'Content is required';
       isValid = false;
     }
-    
+
     if (!isValid) {
       setError(errorMessage);
       // Scroll to the top to show the error
@@ -809,21 +805,21 @@ const PostFormPage = () => {
     } else {
       setError('');
     }
-    
+
     return isValid;
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validate()) {
       return;
     }
-    
+
     try {
       setLoading(true);
       setError(null);
-      
+
       // Create data object for submission
       const postData = {
         title: post.title,
@@ -834,44 +830,41 @@ const PostFormPage = () => {
         featured: post.featured,
         category: post.category // Explicitly include category field
       };
-      
+
       // Add featured image if present
       if (featuredImage) {
         postData.featured_image = featuredImage;
       }
-      
-      // Add additional images if present
-      additionalImages.forEach((image, index) => {
-        postData[`additional_images[${index}]`] = image;
-      });
-      
+
+
+
       console.log('Submitting post data:', postData);
-      
+
       let result;
       let retryCount = 0;
       const maxRetries = 3;
-      
+
       if (isEdit && postIdentifier) {
         // For update operations, implement retry logic
         while (retryCount < maxRetries) {
           try {
             result = await postAPI.update(postIdentifier, postData);
             setSuccess('Post updated successfully!');
-            
+
             // Clear the post cache to ensure fresh data is loaded next time
             clearPostCache(postIdentifier);
-            
+
             // Navigate after a short delay to show the success message
             setTimeout(() => {
               navigate('/admin/posts');
             }, 1500);
-            
+
             // Break out of retry loop on success
             break;
           } catch (updateError) {
             retryCount++;
             console.error(`Update attempt ${retryCount} failed:`, updateError);
-            
+
             if (retryCount >= maxRetries) {
               // Extract specific error messages if available
               if (updateError.response && updateError.response.detail) {
@@ -882,7 +875,7 @@ const PostFormPage = () => {
                 throw new Error(`Failed to update post: ${updateError.message}`);
               }
             }
-            
+
             // Wait before retrying (exponential backoff)
             await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
           }
@@ -891,14 +884,14 @@ const PostFormPage = () => {
         try {
           result = await postAPI.create(postData);
           setSuccess('Post created successfully!');
-          
+
           // Navigate after a short delay to show the success message
           setTimeout(() => {
             navigate('/admin/posts');
           }, 1500);
         } catch (createError) {
           console.error('Error creating post:', createError);
-          
+
           // Handle specific error cases
           if (createError.response && createError.response.slug) {
             throw new Error(`A post with this slug already exists. Please choose a different slug.`);
@@ -913,36 +906,36 @@ const PostFormPage = () => {
       }
     } catch (err) {
       console.error('Error saving post:', err);
-      
+
       // Extract error details if available
       let errorMessage = 'Failed to save post. Please try again.';
-      
+
       if (err.message) {
         errorMessage = err.message;
       }
-      
+
       setError(errorMessage);
-      
+
       // Scroll to the top to show the error
       window.scrollTo(0, 0);
     } finally {
       setLoading(false);
     }
   };
-  
+
   if (loading) {
     return <p>Loading post data...</p>;
   }
-  
+
   return (
-    <DashboardLayout 
+    <DashboardLayout
       title={isEdit ? 'Edit Blog Post' : 'Create New Blog Post'}
       subtitle={isEdit ? 'Update your blog post content and settings' : 'Create a new blog post with rich content'}
     >
       <BackLink to="/admin/posts">
         ← Back to Posts
       </BackLink>
-      
+
       <Form onSubmit={handleSubmit}>
         <Sidebar>
           {error && (
@@ -950,15 +943,15 @@ const PostFormPage = () => {
               <ErrorMessage>{error}</ErrorMessage>
             </ErrorContainer>
           )}
-          
+
           {success && (
             <SuccessContainer>
               <SuccessMessage>{success}</SuccessMessage>
             </SuccessContainer>
           )}
-          
+
           <SectionTitle>Post Details</SectionTitle>
-          
+
           <FormGroup>
             <Label htmlFor="title">Title</Label>
             <Input
@@ -974,7 +967,7 @@ const PostFormPage = () => {
               {post.title.length}/200 characters
             </div>
           </FormGroup>
-          
+
           <FormGroup>
             <Label htmlFor="slug">Slug</Label>
             <SlugInputGroup>
@@ -998,7 +991,7 @@ const PostFormPage = () => {
               {post.slug.length}/250 characters
             </div>
           </FormGroup>
-          
+
           <FormGroup>
             <Label htmlFor="category">Category</Label>
             <CategorySelectionContainer>
@@ -1025,12 +1018,11 @@ const PostFormPage = () => {
                 {loadingCategories ? (
                   <SmallSpinner />
                 ) : (
-                  <>+ Add New</>  
+                  <>+ Add New</>
                 )}
               </AddCategoryButton>
             </CategorySelectionContainer>
             <CategoryHelpText>
-              Can't find the right category? Create a new one!
             </CategoryHelpText>
             {categoriesLoading && (
               <div style={{ fontSize: '0.875rem', color: '#6c757d', marginTop: '0.5rem' }}>
@@ -1038,7 +1030,7 @@ const PostFormPage = () => {
               </div>
             )}
           </FormGroup>
-        
+
           <FormGroup>
             <Label htmlFor="excerpt">Excerpt (Optional)</Label>
             <textarea
@@ -1072,84 +1064,45 @@ const PostFormPage = () => {
             </div>
           </FormGroup>
         </Sidebar>
-        
+
         <EditorSection>
           <SectionTitle>Content</SectionTitle>
-          <RichTextEditor
+          <QuillEditor
             value={post.content}
             onChange={handleEditorChange}
-            onImageUpload={handleImageUpload}
             placeholder="Write your blog post content here..."
-            enableImages={true}
-            enableTables={true}
-            enableMarkdown={true}
-            enableCodeHighlight={true}
-            showWordCount={true}
           />
+
+          <FormGroup style={{ marginTop: 'var(--spacing-6)' }}>
+            <Label htmlFor="featured_image">Featured Image</Label>
+            <Input
+              type="file"
+              id="featured_image"
+              name="featured_image"
+              onChange={handleFeaturedImageChange}
+              accept="image/*"
+            />
+
+            {featuredImagePreview && (
+              <ImagePreviewContainer>
+                <ImagePreview>
+                  <PreviewImageContainer>
+                    <PreviewImage
+                      src={featuredImagePreview}
+                      alt="Featured preview"
+                    />
+                  </PreviewImageContainer>
+                  <RemoveButton onClick={handleRemoveFeaturedImage}>
+                    <CloseIcon />
+                  </RemoveButton>
+                </ImagePreview>
+              </ImagePreviewContainer>
+            )}
+          </FormGroup>
         </EditorSection>
-        
-        <FormGroup>
-          <Label htmlFor="featured_image">Featured Image</Label>
-          <Input
-            type="file"
-            id="featured_image"
-            name="featured_image"
-            onChange={handleFeaturedImageChange}
-            accept="image/*"
-          />
-          
-          {featuredImagePreview && (
-            <ImagePreviewContainer>
-              <ImagePreview>
-                <PreviewImageContainer>
-                  <PreviewImage 
-                    src={featuredImagePreview} 
-                    alt="Featured preview" 
-                  />
-                </PreviewImageContainer>
-                <RemoveButton onClick={handleRemoveFeaturedImage}>
-                  <CloseIcon />
-                </RemoveButton>
-              </ImagePreview>
-            </ImagePreviewContainer>
-          )}
-        </FormGroup>
-        
-        <FormGroup>
-          <Label htmlFor="additional_images">Additional Images</Label>
-          <Input
-            type="file"
-            id="additional_images"
-            name="additional_images"
-            onChange={handleAdditionalImagesChange}
-            accept="image/*"
-            multiple
-          />
-          
-          {additionalImagePreviews && additionalImagePreviews.length > 0 && (
-            <AdditionalImagesContainer>
-              <Label>Preview</Label>
-              <AdditionalImagesGrid>
-                {additionalImagePreviews.map((image, index) => (
-                  <ImageContainer key={index}>
-                    <ImagePreview>
-                      <PreviewImageContainer>
-                        <PreviewImage 
-                          src={image} 
-                          alt={`Preview ${index + 1}`}
-                        />
-                      </PreviewImageContainer>
-                      <RemoveButton onClick={() => handleRemoveAdditionalImage(index)}>
-                        <CloseIcon />
-                      </RemoveButton>
-                    </ImagePreview>
-                  </ImageContainer>
-                ))}
-              </AdditionalImagesGrid>
-            </AdditionalImagesContainer>
-          )}
-        </FormGroup>
-        
+
+
+
         <FormGroup>
           <Label>Publishing Options</Label>
           <PublishOption>
@@ -1163,28 +1116,30 @@ const PostFormPage = () => {
               />
               <span className="slider"></span>
             </ToggleSwitch>
-            <Label htmlFor="published" style={{ marginBottom: 0 }}>
-              {post.published ? 'Published' : 'Draft'}
-            </Label>
+            <PublishOptionContent>
+              <PublishOptionTitle>
+                {post.published ? 'Published' : 'Draft'}
+              </PublishOptionTitle>
+              <PublishOptionDescription>
+                {post.published
+                  ? 'The post will be visible to all visitors immediately after saving.'
+                  : 'The post will be saved as a draft and won\'t be visible to visitors.'}
+              </PublishOptionDescription>
+            </PublishOptionContent>
           </PublishOption>
-          <div style={{ fontSize: '0.875rem', color: '#6c757d', marginTop: '0.5rem' }}>
-            {post.published 
-              ? 'The post will be visible to all visitors immediately after saving.' 
-              : 'The post will be saved as a draft and won\'t be visible to visitors.'}
-          </div>
         </FormGroup>
-        
+
         <ButtonContainer>
-          <StyledButton 
-            type="submit" 
+          <StyledButton
+            type="submit"
             disabled={loading}
             color="primary"
           >
             {loading ? 'Saving...' : (isEdit ? 'Update Post' : 'Create Post')}
           </StyledButton>
-          
-          <StyledButton 
-            type="button" 
+
+          <StyledButton
+            type="button"
             onClick={() => navigate('/admin/posts')}
             color="secondary"
           >
@@ -1192,7 +1147,7 @@ const PostFormPage = () => {
           </StyledButton>
         </ButtonContainer>
       </Form>
-      
+
       {/* Category Creation Modal */}
       <CategoryModal
         isOpen={showCategoryModal}

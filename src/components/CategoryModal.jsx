@@ -184,122 +184,7 @@ const GeneralError = styled.div`
   }
 `;
 
-const ColorSelection = styled.div`
-  border: 2px solid #e9ecef;
-  border-radius: 8px;
-  padding: 1rem;
-  background-color: #f8f9fa;
-`;
 
-const ColorGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-`;
-
-const ColorOption = styled.label`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background-color: rgba(0, 123, 255, 0.05);
-  }
-
-  input[type="radio"] {
-    display: none;
-  }
-`;
-
-const ColorSwatch = styled.div`
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 3px solid #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 0.25rem;
-  transition: all 0.2s ease;
-  background-color: ${props => props.color};
-
-  ${ColorOption}:hover & {
-    transform: scale(1.1);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  }
-`;
-
-const ColorCheck = styled.span`
-  color: white;
-  font-weight: bold;
-  font-size: 0.8rem;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-`;
-
-const ColorLabel = styled.span`
-  font-size: 0.7rem;
-  color: #6c757d;
-  text-align: center;
-`;
-
-const CustomColorSection = styled.div`
-  border-top: 1px solid #dee2e6;
-  padding-top: 1rem;
-`;
-
-const CustomColorLabel = styled.label`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-  color: #495057;
-`;
-
-const CustomColorInput = styled.input`
-  width: 40px;
-  height: 32px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-`;
-
-const CategoryPreview = styled.div`
-  background-color: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-
-  h4 {
-    margin: 0 0 0.5rem 0;
-    font-size: 0.9rem;
-    color: #6c757d;
-    font-weight: 500;
-  }
-`;
-
-const CategoryTagPreview = styled.div`
-  display: flex;
-  align-items: center;
-`;
-
-const CategoryTag = styled.span`
-  display: inline-block;
-  padding: 0.4rem 0.8rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  background-color: ${props => props.color};
-  color: ${props => isLightColor(props.color) ? '#333' : '#fff'};
-`;
 
 const ModalActions = styled.div`
   display: flex;
@@ -310,16 +195,16 @@ const ModalActions = styled.div`
 `;
 
 const Button = styled.button`
-  padding: 0.75rem 1.5rem;
+  padding: var(--spacing-3) var(--spacing-6);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition-smooth);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-2);
   min-width: 120px;
   justify-content: center;
 
@@ -330,26 +215,26 @@ const Button = styled.button`
 `;
 
 const SecondaryButton = styled(Button)`
-  background-color: #6c757d;
-  color: white;
+  background-color: var(--text-light);
+  color: var(--text-inverse);
 
   &:hover:not(:disabled) {
-    background-color: #5a6268;
+    background-color: var(--text-muted);
     transform: translateY(-1px);
   }
 `;
 
 const PrimaryButton = styled(Button)`
-  background-color: #007bff;
-  color: white;
+  background-color: var(--primary);
+  color: var(--text-inverse);
 
   &:hover:not(:disabled) {
-    background-color: #0056b3;
+    background-color: var(--primary-dark);
     transform: translateY(-1px);
   }
 
   &:disabled {
-    background-color: #6c757d;
+    background-color: var(--text-light);
   }
 `;
 
@@ -380,27 +265,12 @@ const isLightColor = (color) => {
 const CategoryModal = ({ isOpen, onClose, onCategoryCreated, existingCategories = [] }) => {
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
-    color: '#007bff'
+    description: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // Predefined color options
-  const colorOptions = [
-    { value: '#007bff', label: 'Blue', name: 'Primary Blue' },
-    { value: '#28a745', label: 'Green', name: 'Success Green' },
-    { value: '#dc3545', label: 'Red', name: 'Danger Red' },
-    { value: '#ffc107', label: 'Yellow', name: 'Warning Yellow' },
-    { value: '#6f42c1', label: 'Purple', name: 'Info Purple' },
-    { value: '#fd7e14', label: 'Orange', name: 'Warning Orange' },
-    { value: '#20c997', label: 'Teal', name: 'Success Teal' },
-    { value: '#e83e8c', label: 'Pink', name: 'Secondary Pink' },
-    { value: '#6c757d', label: 'Gray', name: 'Secondary Gray' },
-    { value: '#17a2b8', label: 'Cyan', name: 'Info Cyan' },
-    { value: '#343a40', label: 'Dark', name: 'Dark Gray' },
-    { value: '#f8f9fa', label: 'Light', name: 'Light Gray' }
-  ];
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -443,10 +313,7 @@ const CategoryModal = ({ isOpen, onClose, onCategoryCreated, existingCategories 
       newErrors.description = 'Description must be less than 200 characters';
     }
 
-    // Validate color
-    if (!formData.color) {
-      newErrors.color = 'Please select a color';
-    }
+
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -465,15 +332,14 @@ const CategoryModal = ({ isOpen, onClose, onCategoryCreated, existingCategories 
       // Prepare data for API
       const categoryData = {
         name: formData.name.trim(),
-        description: formData.description.trim() || '',
-        color: formData.color
+        description: formData.description.trim() || ''
       };
 
       // Call the parent's callback to handle the API call
       await onCategoryCreated(categoryData);
       
       // Reset form and close modal on success
-      setFormData({ name: '', description: '', color: '#007bff' });
+      setFormData({ name: '', description: '' });
       setErrors({});
       onClose();
     } catch (error) {
@@ -494,7 +360,7 @@ const CategoryModal = ({ isOpen, onClose, onCategoryCreated, existingCategories 
 
   const handleClose = () => {
     if (!isSubmitting) {
-      setFormData({ name: '', description: '', color: '#007bff' });
+      setFormData({ name: '', description: '' });
       setErrors({});
       onClose();
     }
@@ -577,59 +443,7 @@ const CategoryModal = ({ isOpen, onClose, onCategoryCreated, existingCategories 
             </CharacterCount>
           </FormGroup>
 
-          <FormGroup>
-            <Label htmlFor="categoryColor">
-              Category Color *
-            </Label>
-            <ColorSelection>
-              <ColorGrid>
-                {colorOptions.map((color) => (
-                  <ColorOption key={color.value}>
-                    <input
-                      type="radio"
-                      name="color"
-                      value={color.value}
-                      checked={formData.color === color.value}
-                      onChange={handleInputChange}
-                      disabled={isSubmitting}
-                    />
-                    <ColorSwatch color={color.value}>
-                      {formData.color === color.value && (
-                        <ColorCheck>✓</ColorCheck>
-                      )}
-                    </ColorSwatch>
-                    <ColorLabel>{color.label}</ColorLabel>
-                  </ColorOption>
-                ))}
-              </ColorGrid>
-              
-              {/* Custom color input */}
-              <CustomColorSection>
-                <CustomColorLabel>
-                  <span>Custom Color:</span>
-                  <CustomColorInput
-                    type="color"
-                    name="color"
-                    value={formData.color}
-                    onChange={handleInputChange}
-                    disabled={isSubmitting}
-                  />
-                </CustomColorLabel>
-              </CustomColorSection>
-            </ColorSelection>
-            {errors.color && (
-              <ErrorMessage>{errors.color}</ErrorMessage>
-            )}
-          </FormGroup>
 
-          <CategoryPreview>
-            <h4>Preview:</h4>
-            <CategoryTagPreview>
-              <CategoryTag color={formData.color}>
-                {formData.name || 'Category Name'}
-              </CategoryTag>
-            </CategoryTagPreview>
-          </CategoryPreview>
 
           <ModalActions>
             <SecondaryButton

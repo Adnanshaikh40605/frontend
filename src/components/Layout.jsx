@@ -26,21 +26,21 @@ const Main = styled.main`
 
 const Layout = () => {
   const location = useLocation();
-  const isDashboard = location.pathname === '/';
   const isLogin = location.pathname === '/login';
   const isAdminPage = location.pathname.startsWith('/admin/');
+  const isDashboard = location.pathname.startsWith('/dashboard');
 
   // For login page, render without any layout
   if (isLogin) {
     return <Outlet />;
   }
 
-  // For dashboard and admin pages, render without header/footer
-  if (isDashboard || isAdminPage) {
+  // For admin and dashboard pages, render without header/footer
+  if (isAdminPage || isDashboard) {
     return <Outlet />;
   }
 
-  // For public pages, render with header and footer
+  // For public pages (including home page), render with header and footer
   return (
     <LayoutContainer>
       <Header />
@@ -52,4 +52,4 @@ const Layout = () => {
   );
 };
 
-export default Layout; 
+export default Layout;

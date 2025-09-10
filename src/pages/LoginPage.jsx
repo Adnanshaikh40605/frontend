@@ -8,40 +8,43 @@ const LoginContainer = styled.div`
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #c53030 0%, #a02626 100%);
-  padding: 1rem;
+  background-color: var(--bg);
+  padding: var(--spacing-4);
 `;
 
 const LoginCard = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-8);
   width: 100%;
   max-width: 400px;
 `;
 
 const LoginHeader = styled.div`
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: var(--spacing-8);
 `;
 
 const Logo = styled.h1`
-  font-size: 2rem;
-  font-weight: bold;
-  color: #c53030;
-  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: var(--spacing-2);
+  font-family: var(--font-family-primary);
 `;
 
 const Subtitle = styled.p`
-  color: #718096;
+  color: var(--text-muted);
   margin: 0;
+  font-size: 0.875rem;
 `;
 
 const Form = styled.form`
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: var(--spacing-6);
 `;
 
 const FormGroup = styled.div`
@@ -50,22 +53,30 @@ const FormGroup = styled.div`
 `;
 
 const Label = styled.label`
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: #2d3748;
+  font-weight: 500;
+  margin-bottom: var(--spacing-2);
+  color: var(--text);
+  font-size: 0.875rem;
 `;
 
 const Input = styled.input`
-  padding: 0.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  padding: var(--spacing-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   font-size: 1rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  min-height: 44px;
+  background-color: var(--bg);
+  color: var(--text);
+  transition: var(--transition-fast);
   
   &:focus {
     outline: none;
-    border-color: #c53030;
-    box-shadow: 0 0 0 3px rgba(197, 48, 48, 0.1);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--focus);
+  }
+  
+  &::placeholder {
+    color: var(--text-muted);
   }
 `;
 
@@ -75,51 +86,71 @@ const PasswordContainer = styled.div`
 
 const PasswordToggle = styled.button`
   position: absolute;
-  right: 0.75rem;
+  right: var(--spacing-3);
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: #718096;
+  color: var(--text-muted);
   cursor: pointer;
-  padding: 0.25rem;
+  padding: var(--spacing-1);
+  border-radius: var(--radius-sm);
+  transition: var(--transition-fast);
   
   &:hover {
-    color: #4a5568;
+    color: var(--text);
+    background-color: var(--surface);
+  }
+  
+  &:focus {
+    // outline: 2px solid var(--focus);
+    outline-offset: 2px;
   }
 `;
 
 const SubmitButton = styled.button`
-  padding: 0.75rem;
-  background-color: #c53030;
-  color: white;
+  padding: var(--spacing-3);
+  background-color: var(--primary);
+  color: var(--primary-contrast);
   border: none;
-  border-radius: 6px;
-  font-weight: 600;
+  border-radius: var(--radius-md);
+  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
+  min-height: 44px;
+  transition: var(--transition-fast);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: var(--spacing-2);
+  font-size: 1rem;
   
   &:hover:not(:disabled) {
-    background-color: #a02626;
+    background-color: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+  
+  &:focus {
+    // outline: 2px solid var(--focus);
+    outline-offset: 2px;
   }
   
   &:disabled {
-    background-color: #718096;
+    background-color: var(--text-muted);
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 `;
 
 const Alert = styled.div`
-  padding: 0.75rem;
-  border-radius: 6px;
-  margin-bottom: 1rem;
-  background-color: ${props => props.$variant === 'warning' ? '#fed7d7' : '#feb2b2'};
-  color: ${props => props.$variant === 'warning' ? '#744210' : '#742a2a'};
-  border: 1px solid ${props => props.$variant === 'warning' ? '#fbb6ce' : '#fc8181'};
+  padding: var(--spacing-3);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-4);
+  background-color: ${props => props.$variant === 'warning' ? 'var(--warning-bg)' : 'var(--danger-bg)'};
+  color: ${props => props.$variant === 'warning' ? 'var(--warning)' : 'var(--danger)'};
+  border: 1px solid ${props => props.$variant === 'warning' ? 'var(--warning)' : 'var(--danger)'};
+  font-size: 0.875rem;
 `;
 
 const Spinner = styled.div`
@@ -165,8 +196,8 @@ const LoginPage = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated && currentUser) {
-      // Redirect to the page the user was trying to access, or to home
-      const from = location.state?.from?.pathname || '/';
+      // Redirect to the page the user was trying to access, or to dashboard
+      const from = location.state?.from?.pathname || '/dashboard';
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, currentUser, navigate, location]);
@@ -268,4 +299,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage; 
+export default LoginPage;

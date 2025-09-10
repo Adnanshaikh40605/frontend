@@ -87,6 +87,7 @@ const KeyboardShortcut = styled.kbd`
   padding: 0.2rem 0.4rem;
   margin: 0 0.2rem;
   font-size: 0.8rem;
+  color: black;
 `;
 
 const ReplyInfo = styled.div`

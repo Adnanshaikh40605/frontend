@@ -12,19 +12,19 @@ export const isAuthenticated = () => {
   if (accessToken) {
     return true;
   }
-  
+
   // Check for refresh token in localStorage
   const refreshToken = localStorage.getItem('refreshToken');
   if (refreshToken) {
     return true;
   }
-  
+
   // Check for legacy auth token
   const authToken = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
   if (authToken) {
     return true;
   }
-  
+
   return false;
 };
 
@@ -38,13 +38,13 @@ export const getAuthToken = () => {
   if (accessToken) {
     return accessToken;
   }
-  
+
   // Fall back to legacy auth token
   const authToken = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
   if (authToken) {
     return authToken;
   }
-  
+
   return null;
 };
 
@@ -73,16 +73,18 @@ export const parseJwt = (token) => {
 /**
  * Check if the token is expired
  * @param {string} token - JWT token
+ * @param {number} bufferSeconds - Buffer time in seconds before considering token expired (default: 0 = no buffer)
  * @returns {boolean} True if expired, false otherwise
  */
-export const isTokenExpired = (token) => {
+export const isTokenExpired = (token, bufferSeconds = 0) => {
   if (!token) return true;
-  
+
   const payload = parseJwt(token);
   if (!payload) return true;
-  
+
   const currentTime = Math.floor(Date.now() / 1000);
-  return payload.exp < currentTime;
+  // Add buffer time to prevent premature expiration
+  return payload.exp < (currentTime + bufferSeconds);
 };
 
 /**
@@ -92,8 +94,10 @@ export const clearAuthData = () => {
   localStorage.removeItem('accessToken');
   localStorage.removeItem('refreshToken');
   localStorage.removeItem('authToken');
+  localStorage.removeItem('userProfile');
+  localStorage.removeItem('userProfileTimestamp');
   sessionStorage.removeItem('authToken');
-  
+
   // Also clear any auth cookies if possible
   document.cookie = 'auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
 }; 

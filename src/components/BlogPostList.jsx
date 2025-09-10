@@ -8,12 +8,19 @@ import { postAPI } from '../api/apiService';
 const PostsContainer = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
+  gap: 1.5rem;
   margin-bottom: 2rem;
+  padding: 0 1rem;
   
-  @media (max-width: 640px) {
+  @media (max-width: 768px) {
     grid-template-columns: 1fr;
-    gap: 1.5rem;
+    gap: 1rem;
+    padding: 0 0.5rem;
+  }
+  
+  @media (min-width: 1200px) {
+    gap: 2rem;
+    padding: 0;
   }
 `;
 
@@ -179,4 +186,4 @@ BlogPostList.propTypes = {
   maxPosts: PropTypes.number
 };
 
-export default BlogPostList; 
+export default BlogPostList;

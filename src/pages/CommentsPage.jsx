@@ -30,15 +30,15 @@ const Tab = styled.button`
   padding: 0.75rem 1.25rem;
   background-color: transparent;
   border: none;
-  border-bottom: 3px solid ${props => props.$active ? '#c53030' : 'transparent'};
-  color: ${props => props.$active ? '#c53030' : '#718096'};
+  border-bottom: 3px solid ${props => props.$active ? '#0066cc' : 'transparent'};
+  color: ${props => props.$active ? '#0066cc' : '#718096'};
   font-weight: ${props => props.$active ? 'bold' : 'normal'};
   cursor: pointer;
   transition: all 0.2s;
   position: relative;
   
   &:hover {
-    color: #a02626;
+    color: #0066cc;
     background-color: #f7fafc;
   }
   
@@ -48,7 +48,7 @@ const Tab = styled.button`
 `;
 
 const TabCounter = styled.span`
-  background-color: ${props => props.$active ? '#c53030' : '#718096'};
+  background-color: ${props => props.$active ? '#0066cc' : '#718096'};
   color: white;
   border-radius: 10px;
   padding: 0.15rem 0.5rem;
@@ -94,7 +94,7 @@ const BulkActionSelect = styled.select`
 
 const ApplyButton = styled.button`
   padding: 0.375rem 0.75rem;
-  background-color: #c53030;
+  background-color: #0066cc;
   color: white;
   border: none;
   border-radius: 6px;
@@ -111,24 +111,7 @@ const ApplyButton = styled.button`
   }
 `;
 
-const DebugInfo = styled.div`
-  margin-top: 1rem;
-  padding: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background-color: #f9f9f9;
-  font-family: monospace;
-  font-size: 0.8rem;
-  overflow-x: auto;
-`;
 
-const StatsContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-  color: #6c757d;
-  font-size: 0.9rem;
-`;
 
 const PaginationContainer = styled.div`
   display: flex;
@@ -139,8 +122,8 @@ const PaginationContainer = styled.div`
 
 const PageButton = styled.button`
   padding: 0.375rem 0.75rem;
-  border: 1px solid ${props => props.$active ? '#c53030' : '#e2e8f0'};
-  background-color: ${props => props.$active ? '#c53030' : 'white'};
+  border: 1px solid ${props => props.$active ? '#0066cc' : '#e2e8f0'};
+  background-color: ${props => props.$active ? '#0066cc' : 'white'};
   color: ${props => props.$active ? 'white' : '#2d3748'};
   border-radius: 6px;
   cursor: ${props => props.$disabled ? 'not-allowed' : 'pointer'};
@@ -192,22 +175,19 @@ const CommentsPage = () => {
     approved: 0,
     trash: 0
   });
-  
+
   // Selected comments for bulk actions
   const [selectedComments, setSelectedComments] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
   const [bulkAction, setBulkAction] = useState('');
-  
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [resultsPerPage] = useState(10);
-  
-  // For development: debug info
-  const isDevelopment = import.meta.env.DEV;
-  const [showDebug, setShowDebug] = useState(false);
-  const [debug, setDebug] = useState({});
-  
+
+
+
   // Define fetchCounts function
   const fetchCounts = useCallback(async () => {
     try {
@@ -223,7 +203,7 @@ const CommentsPage = () => {
       console.error('Error fetching comment counts:', err);
     }
   }, []);
-  
+
   // Debounced fetchCounts to avoid multiple API calls
   const debouncedFetchCounts = useCallback(() => {
     if (window.fetchCountsTimeout) {
@@ -233,12 +213,12 @@ const CommentsPage = () => {
       fetchCounts();
     }, 300);
   }, [fetchCounts]);
-  
+
   // Fetch comment counts only once on component mount
   useEffect(() => {
     fetchCounts();
   }, [fetchCounts]);
-  
+
   // Fetch comments based on active tab
   useEffect(() => {
     const fetchComments = async () => {
@@ -247,15 +227,15 @@ const CommentsPage = () => {
         setError(null);
         setSelectedComments([]);
         setSelectAll(false);
-        
+
         console.log('CommentsPage - Fetching comments for tab:', activeTab);
-        
+
         // Prepare query parameters
         const params = {
           page: currentPage,
           limit: resultsPerPage
         };
-        
+
         // Add filter based on active tab
         if (activeTab === TABS.PENDING) {
           params.approved = false;
@@ -269,18 +249,17 @@ const CommentsPage = () => {
           // ALL tab, exclude trash
           params.is_trash = false;
         }
-        
+
         // Use the admin API service to fetch ALL comments including replies
         const responseData = await commentAPI.getAdminComments(params);
         console.log('CommentsPage - Admin comments response:', responseData);
-        setDebug(responseData);
-        
+
         // Handle pagination data
         if (responseData.count !== undefined) {
           const total = Math.ceil(responseData.count / resultsPerPage);
           setTotalPages(total > 0 ? total : 1);
         }
-        
+
         // Handle comments data
         if (responseData.results && Array.isArray(responseData.results)) {
           setComments(responseData.results);
@@ -297,40 +276,40 @@ const CommentsPage = () => {
         setLoading(false);
       }
     };
-    
+
     fetchComments();
   }, [activeTab, currentPage, resultsPerPage]);
-  
+
   // Handle tab change
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setCurrentPage(1); // Reset pagination when changing tabs
   };
-  
+
   // Handle approve comment
   const handleApproveComment = async (comment) => {
     try {
       // Extract ID if we received a comment object
       const commentId = comment?.id || comment;
-      
+
       if (!commentId) {
         console.error('Invalid comment ID:', comment);
         alert('Error: Invalid comment ID');
         return;
       }
-      
+
       await commentAPI.approve(commentId);
-      
+
       // Remove comment from current list if we're looking at pending comments
       if (activeTab === TABS.PENDING) {
         setComments(comments.filter(c => c.id !== commentId));
       } else {
         // Update the comment status in the list
-        setComments(comments.map(c => 
+        setComments(comments.map(c =>
           c.id === commentId ? { ...c, approved: true } : c
         ));
       }
-      
+
       // Use debounced fetch counts
       debouncedFetchCounts();
     } catch (err) {
@@ -338,32 +317,32 @@ const CommentsPage = () => {
       alert('Failed to approve comment. Please try again.');
     }
   };
-  
+
   // Handle reject/unapprove comment
   const handleRejectComment = async (comment) => {
     try {
       // Extract ID if we received a comment object
       const commentId = comment?.id || comment;
-      
+
       if (!commentId) {
         console.error('Invalid comment ID:', comment);
         alert('Error: Invalid comment ID');
         return;
       }
-      
+
       await commentAPI.reject(commentId);
-      
+
       // Update the current list based on active tab
       if (activeTab === TABS.APPROVED) {
         setComments(comments.filter(c => c.id !== commentId));
       } else if (activeTab === TABS.ALL) {
-        setComments(comments.map(c => 
+        setComments(comments.map(c =>
           c.id === commentId ? { ...c, approved: false } : c
         ));
       } else if (activeTab === TABS.PENDING) {
         // Nothing needed here since it stays pending
       }
-      
+
       // Use debounced fetch counts
       debouncedFetchCounts();
     } catch (err) {
@@ -371,24 +350,24 @@ const CommentsPage = () => {
       alert('Failed to unapprove comment. Please try again.');
     }
   };
-  
+
   // Handle trash comment
   const handleTrashComment = async (comment) => {
     try {
       // Extract ID if we received a comment object
       const commentId = comment?.id || comment;
-      
+
       if (!commentId) {
         console.error('Invalid comment ID:', comment);
         alert('Error: Invalid comment ID');
         return;
       }
-      
+
       await commentAPI.trashComment(commentId);
-      
+
       // Remove from current view since it's now in trash
       setComments(comments.filter(c => c.id !== commentId));
-      
+
       // Use debounced fetch counts
       debouncedFetchCounts();
     } catch (err) {
@@ -396,26 +375,26 @@ const CommentsPage = () => {
       alert('Failed to trash comment. Please try again.');
     }
   };
-  
+
   // Handle restore from trash
   const handleRestoreComment = async (comment) => {
     try {
       // Extract ID if we received a comment object
       const commentId = comment?.id || comment;
-      
+
       if (!commentId) {
         console.error('Invalid comment ID:', comment);
         alert('Error: Invalid comment ID');
         return;
       }
-      
+
       await commentAPI.restoreComment(commentId);
-      
+
       // Remove from trash view
       if (activeTab === TABS.TRASH) {
         setComments(comments.filter(c => c.id !== commentId));
       }
-      
+
       // Use debounced fetch counts
       debouncedFetchCounts();
     } catch (err) {
@@ -423,25 +402,25 @@ const CommentsPage = () => {
       alert('Failed to restore comment. Please try again.');
     }
   };
-  
+
   // Handle delete permanently
   const handleDeleteComment = async (comment) => {
     try {
       // Extract ID if we received a comment object
       const commentId = comment?.id || comment;
-      
+
       if (!commentId) {
         console.error('Invalid comment ID:', comment);
         alert('Error: Invalid comment ID');
         return;
       }
-      
+
       if (window.confirm('Are you sure you want to permanently delete this comment?')) {
         await commentAPI.deleteComment(commentId);
-        
+
         // Remove from any view
         setComments(comments.filter(c => c.id !== commentId));
-        
+
         // Use debounced fetch counts
         debouncedFetchCounts();
       }
@@ -450,7 +429,7 @@ const CommentsPage = () => {
       alert('Failed to delete comment. Please try again.');
     }
   };
-  
+
   // Handle reply to comment 
   const handleReplyComment = async (comment, replyContent) => {
     try {
@@ -458,38 +437,38 @@ const CommentsPage = () => {
       if (comment && comment.status === 'Reply added successfully' && comment.comment) {
         // API call was already made by AdminReplyForm, just update the UI
         const updatedComment = comment.comment;
-        setComments(prevComments => 
-          prevComments.map(c => 
-            c.id === updatedComment.parent 
+        setComments(prevComments =>
+          prevComments.map(c =>
+            c.id === updatedComment.parent
               ? { ...c, admin_reply: updatedComment.content }
               : c
           )
         );
         return;
       }
-      
+
       // If we get here, we need to make the API call ourselves
       // Extract ID if we received a comment object
       const commentId = comment?.id || comment;
-      
+
       if (!commentId) {
         console.error('Invalid comment ID:', comment);
         alert('Error: Invalid comment ID');
         return;
       }
-      
+
       const replyData = {
         content: replyContent, // Required field
         admin_reply: true // Boolean flag to indicate this is an admin reply
       };
-      
+
       const response = await commentAPI.replyToComment(commentId, replyData);
-      
+
       // Update comment in list
       if (response && response.comment) {
-        setComments(prevComments => 
-          prevComments.map(c => 
-            c.id === commentId 
+        setComments(prevComments =>
+          prevComments.map(c =>
+            c.id === commentId
               ? { ...c, admin_reply: replyContent }
               : c
           )
@@ -500,12 +479,12 @@ const CommentsPage = () => {
       alert('Failed to submit reply. Please try again.');
     }
   };
-  
+
   // Handle select all checkbox
   const handleSelectAll = (e) => {
     const checked = e.target.checked;
     setSelectAll(checked);
-    
+
     if (checked) {
       // Select all comment IDs
       const allIds = comments.map(comment => comment.id);
@@ -515,7 +494,7 @@ const CommentsPage = () => {
       setSelectedComments([]);
     }
   };
-  
+
   // Handle individual comment selection
   const handleCommentSelect = (commentId, checked) => {
     if (checked) {
@@ -524,11 +503,11 @@ const CommentsPage = () => {
       setSelectedComments(selectedComments.filter(id => id !== commentId));
     }
   };
-  
+
   // Apply bulk action
   const handleApplyBulkAction = async () => {
     if (!bulkAction || selectedComments.length === 0) return;
-    
+
     try {
       switch (bulkAction) {
         case 'approve':
@@ -539,13 +518,13 @@ const CommentsPage = () => {
               setComments(comments.filter(comment => !selectedComments.includes(comment.id)));
             } else {
               // Update status in current list
-              setComments(comments.map(comment => 
+              setComments(comments.map(comment =>
                 selectedComments.includes(comment.id) ? { ...comment, approved: true } : comment
               ));
             }
           }
           break;
-          
+
         case 'unapprove':
           if (window.confirm(`Are you sure you want to unapprove ${selectedComments.length} selected comments?`)) {
             await commentAPI.bulkReject(selectedComments);
@@ -554,13 +533,13 @@ const CommentsPage = () => {
               setComments(comments.filter(comment => !selectedComments.includes(comment.id)));
             } else {
               // Update status in current list
-              setComments(comments.map(comment => 
+              setComments(comments.map(comment =>
                 selectedComments.includes(comment.id) ? { ...comment, approved: false } : comment
               ));
             }
           }
           break;
-          
+
         case 'trash':
           if (window.confirm(`Are you sure you want to move ${selectedComments.length} selected comments to trash?`)) {
             // We don't have a bulk trash API yet, so do it one by one
@@ -571,7 +550,7 @@ const CommentsPage = () => {
             setComments(comments.filter(comment => !selectedComments.includes(comment.id)));
           }
           break;
-          
+
         case 'restore':
           if (window.confirm(`Are you sure you want to restore ${selectedComments.length} selected comments?`)) {
             // We don't have a bulk restore API yet, so do it one by one
@@ -584,7 +563,7 @@ const CommentsPage = () => {
             }
           }
           break;
-          
+
         case 'delete':
           if (window.confirm(`Are you sure you want to PERMANENTLY DELETE ${selectedComments.length} selected comments? This cannot be undone.`)) {
             // We don't have a bulk delete API yet, so do it one by one
@@ -595,90 +574,74 @@ const CommentsPage = () => {
             setComments(comments.filter(comment => !selectedComments.includes(comment.id)));
           }
           break;
-          
+
         default:
           alert('Invalid action selected');
           return;
       }
-      
+
       // Reset selection and action
       setSelectedComments([]);
       setSelectAll(false);
       setBulkAction('');
-      
+
       // Use debounced fetch counts
       debouncedFetchCounts();
-      
+
     } catch (err) {
       console.error('Error applying bulk action:', err);
       alert(`Failed to apply bulk action: ${err.message}`);
     }
   };
-  
+
   return (
-    <DashboardLayout 
-      title="Comments Management" 
+    <DashboardLayout
+      title="Comments Management"
       subtitle="Moderate and manage user comments across all blog posts"
     >
       <Header>
-        
-        {isDevelopment && (
-          <button 
-            onClick={() => setShowDebug(!showDebug)}
-            style={{ 
-              padding: '0.5rem 1rem', 
-              backgroundColor: showDebug ? '#ff9900' : 'transparent',
-              color: showDebug ? 'white' : '#ff9900',
-              border: '1px solid #ff9900',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            Debug
-          </button>
-        )}
       </Header>
-      
+
       <TabsContainer>
-        <Tab 
+        <Tab
           $active={activeTab === TABS.ALL}
           onClick={() => handleTabChange(TABS.ALL)}
         >
           All <TabCounter $active={activeTab === TABS.ALL}>{counts.all}</TabCounter>
         </Tab>
-        <Tab 
+        <Tab
           $active={activeTab === TABS.PENDING}
           onClick={() => handleTabChange(TABS.PENDING)}
         >
           Pending <TabCounter $active={activeTab === TABS.PENDING}>{counts.pending}</TabCounter>
         </Tab>
-        <Tab 
+        <Tab
           $active={activeTab === TABS.APPROVED}
           onClick={() => handleTabChange(TABS.APPROVED)}
         >
           Approved <TabCounter $active={activeTab === TABS.APPROVED}>{counts.approved}</TabCounter>
         </Tab>
-        <Tab 
+        <Tab
           $active={activeTab === TABS.TRASH}
           onClick={() => handleTabChange(TABS.TRASH)}
         >
           Trash <TabCounter $active={activeTab === TABS.TRASH}>{counts.trash}</TabCounter>
         </Tab>
       </TabsContainer>
-      
+
       {comments.length > 0 && (
         <BulkActionsContainer>
           <SelectAllContainer>
-            <SelectAllCheckbox 
-              type="checkbox" 
+            <SelectAllCheckbox
+              type="checkbox"
               checked={selectAll}
               onChange={handleSelectAll}
               id="select-all"
             />
             <label htmlFor="select-all">Select All</label>
           </SelectAllContainer>
-          
-          <BulkActionSelect 
+
+          <BulkActionSelect
             value={bulkAction}
             onChange={(e) => setBulkAction(e.target.value)}
           >
@@ -689,43 +652,43 @@ const CommentsPage = () => {
             {activeTab === TABS.TRASH && <option value="restore">Restore</option>}
             {activeTab === TABS.TRASH && <option value="delete">Delete Permanently</option>}
           </BulkActionSelect>
-          
-          <ApplyButton 
+
+          <ApplyButton
             onClick={handleApplyBulkAction}
             disabled={!bulkAction || selectedComments.length === 0}
           >
             Apply
           </ApplyButton>
-          
+
           <ResultsCounter>
             {selectedComments.length} of {comments.length} selected
           </ResultsCounter>
         </BulkActionsContainer>
       )}
-      
+
       {loading ? (
         <Message>Loading comments...</Message>
       ) : error ? (
         <Message>{error}</Message>
       ) : comments.length === 0 ? (
         <Message>
-          {activeTab === TABS.PENDING ? 'No pending comments found.' : 
-           activeTab === TABS.APPROVED ? 'No approved comments found.' : 
-           activeTab === TABS.TRASH ? 'No comments in trash.' : 
-           'No comments found.'}
+          {activeTab === TABS.PENDING ? 'No pending comments found.' :
+            activeTab === TABS.APPROVED ? 'No approved comments found.' :
+              activeTab === TABS.TRASH ? 'No comments in trash.' :
+                'No comments found.'}
         </Message>
       ) : (
         <CommentsList>
           {comments.map(comment => (
             <CommentContainer key={comment.id}>
               <CheckboxContainer>
-                <CommentCheckbox 
+                <CommentCheckbox
                   type="checkbox"
                   checked={selectedComments.includes(comment.id)}
                   onChange={(e) => handleCommentSelect(comment.id, e.target.checked)}
                 />
               </CheckboxContainer>
-              <Comment 
+              <Comment
                 comment={comment}
                 onApprove={handleApproveComment}
                 onReject={handleRejectComment}
@@ -740,44 +703,44 @@ const CommentsPage = () => {
           ))}
         </CommentsList>
       )}
-      
+
       {totalPages > 1 && (
         <PaginationContainer>
-          <PageButton 
-            onClick={() => setCurrentPage(1)} 
+          <PageButton
+            onClick={() => setCurrentPage(1)}
             disabled={currentPage === 1}
             $disabled={currentPage === 1}
           >
             &laquo; First
           </PageButton>
-          <PageButton 
-            onClick={() => setCurrentPage(currentPage => Math.max(1, currentPage - 1))} 
+          <PageButton
+            onClick={() => setCurrentPage(currentPage => Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
             $disabled={currentPage === 1}
           >
             &lsaquo; Prev
           </PageButton>
-          
+
           {/* Show page numbers with ellipsis for large sets */}
           {[...Array(totalPages)].map((_, i) => {
             const pageNum = i + 1;
             // Only show current page, first, last, and pages around current
             if (
-              pageNum === 1 || 
-              pageNum === totalPages || 
+              pageNum === 1 ||
+              pageNum === totalPages ||
               (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
             ) {
               return (
-                <PageButton 
-                  key={pageNum} 
-                  onClick={() => setCurrentPage(pageNum)} 
+                <PageButton
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
                   $active={currentPage === pageNum}
                 >
                   {pageNum}
                 </PageButton>
               );
             } else if (
-              (pageNum === 2 && currentPage > 3) || 
+              (pageNum === 2 && currentPage > 3) ||
               (pageNum === totalPages - 1 && currentPage < totalPages - 2)
             ) {
               // Show ellipsis
@@ -786,16 +749,16 @@ const CommentsPage = () => {
               return null;
             }
           })}
-          
-          <PageButton 
-            onClick={() => setCurrentPage(currentPage => Math.min(totalPages, currentPage + 1))} 
+
+          <PageButton
+            onClick={() => setCurrentPage(currentPage => Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
             $disabled={currentPage === totalPages}
           >
             Next &rsaquo;
           </PageButton>
-          <PageButton 
-            onClick={() => setCurrentPage(totalPages)} 
+          <PageButton
+            onClick={() => setCurrentPage(totalPages)}
             disabled={currentPage === totalPages}
             $disabled={currentPage === totalPages}
           >
@@ -803,13 +766,8 @@ const CommentsPage = () => {
           </PageButton>
         </PaginationContainer>
       )}
-      
-      {showDebug && (
-        <DebugInfo>
-          <h4>Debug Info:</h4>
-          <pre>{JSON.stringify(debug, null, 2)}</pre>
-        </DebugInfo>
-      )}
+
+
     </DashboardLayout>
   );
 };

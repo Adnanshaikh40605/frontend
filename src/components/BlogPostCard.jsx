@@ -52,6 +52,10 @@ const CardContent = styled.div`
   display: flex;
   flex-direction: column;
   flex-grow: 1;
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
 `;
 
 const CategoryTag = styled.span`
@@ -107,6 +111,12 @@ const Meta = styled.div`
   margin-top: auto;
   border-top: 1px solid #f0f0f0;
   padding-top: 1rem;
+  
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
 `;
 
 const Date = styled.span`
@@ -190,6 +200,10 @@ const AuthorInfo = styled.div`
   display: flex;
   align-items: center;
   margin-bottom: 1rem;
+  
+  @media (max-width: 480px) {
+    margin-bottom: 0.75rem;
+  }
 `;
 
 const AuthorAvatar = styled.div`
@@ -336,4 +350,4 @@ BlogPostCard.propTypes = {
   post: PropTypes.object.isRequired,
 };
 
-export default BlogPostCard; 
+export default BlogPostCard;

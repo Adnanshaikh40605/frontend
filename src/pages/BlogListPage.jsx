@@ -7,121 +7,41 @@ import SEO from '../components/SEO';
 import Image from '../components/Image';
 import placeholderImage from '../assets/placeholder-image.js';
 
-const Header = styled.header`
-  text-align: center;
-  margin-bottom: 3rem;
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-`;
 
-const BlogTitle = styled.h1`
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #2d3748;
-  margin-bottom: 1rem;
-`;
-
-const BlogSubtitle = styled.p`
-  font-size: 1.1rem;
-  color: #718096;
-  max-width: 700px;
-  margin: 0 auto;
-  line-height: 1.6;
-`;
-
-const SearchContainer = styled.div`
-  max-width: 550px;
-  margin: 2rem auto;
-  position: relative;
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-`;
-
-const SearchInput = styled.input`
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  font-size: 1rem;
-  outline: none;
-  
-  &:focus {
-    border-color: #c53030;
-    box-shadow: 0 0 0 3px rgba(197, 48, 48, 0.1);
-  }
-`;
-
-const SearchTypeSelector = styled.div`
-  display: flex;
-  justify-content: center;
-  margin-top: 0.5rem;
-  gap: 1rem;
-`;
-
-const SearchTypeButton = styled.button`
-  background: none;
-  border: none;
-  padding: 0.25rem 0.5rem;
-  cursor: pointer;
-  color: ${props => props.$active ? '#c53030' : '#718096'};
-  font-weight: ${props => props.$active ? 'bold' : 'normal'};
-  border-bottom: 2px solid ${props => props.$active ? '#c53030' : 'transparent'};
-  
-  &:hover {
-    color: #c53030;
-  }
-`;
-
-const SearchIcon = styled.span`
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #666;
-`;
-
-const SearchButton = styled.button`
-  position: absolute;
-  right: 0;
-  top: 0;
-  padding: 13px 1rem;
-  background-color: #c53030;
-  color: white;
-  border: none;
-  border-top-right-radius: 6px;
-  border-bottom-right-radius: 6px;
-  cursor: pointer;
-  
-  &:hover {
-    background-color: #0055aa;
-  }
-`;
 
 const BlogGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 2rem;
+  gap: 1.5rem;
   margin-top: 2rem;
+  padding: 0 1rem;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 0 0.5rem;
+  }
+  
+  @media (min-width: 1200px) {
+    gap: 2rem;
+    padding: 0;
+  }
 `;
 
 const BlogPost = styled.article`
-  background: white;
-  border-radius: 8px;
+  background: var(--bg);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-smooth);
   height: 100%;
   display: flex;
   flex-direction: column;
-  border-top: 3px solid #c53030;
+  border-top: 3px solid var(--primary);
   
   &:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-lg);
   }
 `;
 
@@ -130,7 +50,7 @@ const FeaturedImageContainer = styled.div`
   height: 200px;
   position: relative;
   overflow: hidden;
-  background-color: #f3f3f3;
+  background-color: var(--surface-light);
 `;
 
 const FeaturedImage = styled.img`
@@ -147,32 +67,43 @@ const PostContent = styled.div`
   flex-grow: 1;
   display: flex;
   flex-direction: column;
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
 `;
 
 const PostMeta = styled.div`
   display: flex;
   align-items: center;
-  margin-bottom: 0.75rem;
-  color: #718096;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  color: var(--text-light);
   font-size: 0.85rem;
+  
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
 `;
 
 const PostDate = styled.span`
-  color: #718096;
+  color: var(--text-light);
 `;
 
 const ReadTime = styled.span`
-  color: #718096;
+  color: var(--text-light);
   &:before {
     content: "•";
-    margin: 0 0.5rem;
+    margin: 0 var(--spacing-2);
   }
 `;
 
 const PostTitle = styled.h2`
   font-size: 1.4rem;
-  color: #2d3748;
-  margin-bottom: 0.75rem;
+  color: var(--text);
+  margin-bottom: var(--spacing-3);
   font-weight: 600;
   line-height: 1.3;
 
@@ -181,73 +112,73 @@ const PostTitle = styled.h2`
     text-decoration: none;
     
     &:hover {
-      color: #c53030;
+      color: var(--primary);
     }
   }
 `;
 
 const PostExcerpt = styled.p`
-  color: #4a5568;
+  color: var(--text-muted);
   font-size: 1rem;
   line-height: 1.6;
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--spacing-6);
   flex-grow: 1;
 `;
 
 const ReadMoreButton = styled(Link)`
   display: inline-block;
-  padding: 0.75rem 1.5rem;
-  background-color: #c53030;
-  color: white;
+  padding: var(--spacing-3) var(--spacing-6);
+  background-color: var(--primary);
+  color: var(--text-inverse);
   text-decoration: none;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-weight: 500;
   font-size: 0.9rem;
-  transition: all 0.2s ease;
+  transition: var(--transition-smooth);
   align-self: flex-start;
 
   &:hover {
-    background-color: #ffd633;
+    background-color: var(--primary-hover);
   }
 `;
 
 const LoadingMessage = styled.div`
   text-align: center;
-  padding: 4rem;
-  color: #666;
+  padding: var(--spacing-16);
+  color: var(--text-light);
   font-size: 1.1rem;
 `;
 
 const ErrorMessage = styled.div`
   text-align: center;
-  padding: 4rem;
-  color: #dc3545;
+  padding: var(--spacing-16);
+  color: var(--danger);
   font-size: 1.1rem;
 `;
 
 const Pagination = styled.div`
   display: flex;
   justify-content: center;
-  margin-top: 3rem;
-  gap: 0.5rem;
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-top: var(--spacing-12);
+  gap: var(--spacing-2);
+  background: var(--surface);
+  padding: var(--spacing-8);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 `;
 
 const PageButton = styled.button`
-  padding: 0.75rem 1rem;
-  background-color: ${props => props.$active ? '#c53030' : 'white'};
-  color: ${props => props.$active ? 'white' : '#2d3748'};
-  border: 1px solid ${props => props.$active ? '#c53030' : '#e2e8f0'};
-  border-radius: 6px;
+  padding: var(--spacing-3) var(--spacing-4);
+  background-color: ${props => props.$active ? 'var(--primary)' : 'var(--surface)'};
+  color: ${props => props.$active ? 'var(--text-inverse)' : 'var(--text)'};
+  border: 1px solid ${props => props.$active ? 'var(--primary)' : 'var(--border-color)'};
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--transition-smooth);
   font-weight: 500;
   
   &:hover:not(:disabled) {
-    background-color: ${props => props.$active ? '#a02626' : '#f7fafc'};
+    background-color: ${props => props.$active ? 'var(--primary-dark)' : 'var(--surface-light)'};
     transform: translateY(-1px);
   }
   
@@ -275,12 +206,12 @@ const FadeIn = styled.div`
 // Add a loading overlay component
 const LoadingOverlay = styled.div`
   position: fixed;
-  top: 0;
+  top: 64px;
   left: 0;
   right: 0;
   bottom: 0;
   background-color: rgba(255, 255, 255, 0.8);
-  z-index: 1000;
+  z-index: 999;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -292,9 +223,9 @@ const LoadingOverlay = styled.div`
 const Spinner = styled.div`
   width: 40px;
   height: 40px;
-  border: 3px solid rgba(255, 204, 0, 0.3);
+  border: 3px solid var(--border-light);
   border-radius: 50%;
-  border-top-color: #ffcc00;
+  border-top-color: var(--primary);
   animation: spin 1s ease-in-out infinite;
   
   @keyframes spin {
@@ -315,12 +246,10 @@ const BlogListPage = () => {
   const [loading, setLoading] = useState(!postsCache.data);
   const [visibleLoading, setVisibleLoading] = useState(!postsCache.data);
   const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const initialLoad = useRef(!postsCache.data);
   const isMounted = useRef(true);
   const mainContentRef = useRef(null);
-  const [searchType, setSearchType] = useState('title'); // 'title' or 'slug'
   
   // Check if this is a category page
   const isCategoryPage = location.pathname.startsWith('/blog/category/');
@@ -345,15 +274,7 @@ const BlogListPage = () => {
       
       // Still update in the background
       try {
-        // Add search parameters if present
-        const params = {};
-        if (searchQuery && searchType === 'title') {
-          params.title = searchQuery;
-        } else if (searchQuery && searchType === 'slug') {
-          params.slug = searchQuery;
-        }
-        
-        const data = await postAPI.getAll(params);
+        const data = await postAPI.getAll();
         if (isMounted.current) {
           // Ensure we're getting an array from the API response
           const postsArray = Array.isArray(data.results) ? data.results : 
@@ -377,15 +298,7 @@ const BlogListPage = () => {
         }
       }, 200);
       
-      // Add search parameters if present
-      const params = {};
-      if (searchQuery && searchType === 'title') {
-        params.title = searchQuery;
-      } else if (searchQuery && searchType === 'slug') {
-        params.slug = searchQuery;
-      }
-      
-      const data = await postAPI.getAll(params);
+      const data = await postAPI.getAll();
       console.log('Fetched blog posts:', data);
       
       clearTimeout(loadingTimer);
@@ -450,7 +363,7 @@ const BlogListPage = () => {
     return () => {
       isMounted.current = false;
     };
-  }, [searchType]); // Only re-fetch when searchType changes, search button handles searchQuery changes
+  }, []); // Only fetch once on mount
 
   useEffect(() => {
     if (!loading && posts.length === 0 && currentPage > 1) {
@@ -460,12 +373,6 @@ const BlogListPage = () => {
 
   // Define totalPages
   const totalPages = Math.ceil(posts.length / 10);
-
-  // Make sure posts is an array before filtering
-  const filteredPosts = Array.isArray(posts) ? posts.filter(post => 
-    post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (post.excerpt && post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()))
-  ) : [];
 
   const renderContent = () => {
     if (loading && !posts.length) {
@@ -478,42 +385,8 @@ const BlogListPage = () => {
 
     return (
       <FadeIn>
-        <Header>
-          <BlogTitle>{category ? `${category} Articles` : 'Our Blog'}</BlogTitle>
-          <BlogSubtitle>
-            {category
-              ? `Explore our latest articles about ${category.toLowerCase()}`
-              : 'Insights, news, and expert perspectives from our team to help you stay informed.'}
-          </BlogSubtitle>
-        </Header>
-        
-        <SearchContainer>
-          <SearchInput 
-            type="text"
-            placeholder="Search articles..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <SearchTypeSelector>
-            <SearchTypeButton 
-              $active={searchType === 'title'}
-              onClick={() => setSearchType('title')}
-            >
-              Title
-            </SearchTypeButton>
-            <SearchTypeButton 
-              $active={searchType === 'slug'}
-              onClick={() => setSearchType('slug')}
-            >
-              Slug
-            </SearchTypeButton>
-          </SearchTypeSelector>
-          <SearchIcon aria-hidden="true"></SearchIcon>
-          <SearchButton onClick={fetchPosts}>Search</SearchButton>
-        </SearchContainer>
-
         <BlogGrid>
-          {filteredPosts.map(post => (
+          {posts.map(post => (
             <BlogPost key={post.id}>
               <FeaturedImageContainer>
                 {(post.featured_image_url || post.featured_image) && (
@@ -556,7 +429,7 @@ const BlogListPage = () => {
   return (
     <DashboardLayout 
       title="Public Blog" 
-      subtitle="Browse and read all published blog posts"
+      
       showContentWrapper={false}
     >
       {/* SEO Meta Tags */}
@@ -570,6 +443,8 @@ const BlogListPage = () => {
       <LoadingOverlay $isVisible={visibleLoading}>
         <Spinner />
       </LoadingOverlay>
+      
+      <div style={{ padding: '2rem', marginTop: '64px', minHeight: 'calc(100vh - 64px)' }}>
         {renderContent()}
         
         <Pagination>
@@ -597,8 +472,9 @@ const BlogListPage = () => {
             Next
           </PageButton>
         </Pagination>
+      </div>
     </DashboardLayout>
   );
 };
 
-export default BlogListPage; 
+export default BlogListPage;

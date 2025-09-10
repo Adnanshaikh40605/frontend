@@ -4,6 +4,7 @@ import { ENDPOINTS, MEDIA_URL } from './apiEndpoints';
 import { getHeaders, handleResponse, handleApiWithFallback } from './apiUtils';
 import { mockPosts, mockComments, createLocalImageUrl } from './apiMocks';
 import { isAuthenticated, getAuthToken } from '../utils/authUtils';
+import { handleApiError, validateFileUpload, retryRequest } from '../utils/errorHandler';
 
 // Determine if we're in development mode
 const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -27,6 +28,35 @@ export const mediaAPI = {
 
     // Otherwise, add the media URL
     return `${MEDIA_URL}${path.replace(/^\//, '')}`;
+  },
+
+  // Upload file with validation
+  uploadFile: async (file, options = {}) => {
+    try {
+      // Validate file
+      const validation = validateFileUpload(file, options);
+      if (!validation.isValid) {
+        throw new Error(validation.errors.join(', '));
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(ENDPOINTS.MEDIA_UPLOAD, {
+        method: 'POST',
+        headers: getHeaders(false), // Don't set Content-Type for FormData
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      handleApiError(error, { showNotification: true });
+      throw error;
+    }
   },
 
   // Get optimized image URL with size parameters (when supported by backend)
@@ -164,8 +194,8 @@ export const postAPI = {
   // Get single post by slug
   getBySlug: async (slug) => {
     try {
-      // Ensure we're using the correct URL format for slug-based lookups
-      const url = `${ENDPOINTS.POSTS}${slug}/`;
+      // Use the correct backend endpoint for slug-based lookups
+      const url = `${ENDPOINTS.POSTS}by-slug/${slug}/`;
 
       console.log('Fetching post with URL:', url);
 

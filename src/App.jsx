@@ -1,15 +1,19 @@
-import { 
-  BrowserRouter as Router, 
-  Routes, 
+import {
+  BrowserRouter as Router,
+  Routes,
   Route,
   Navigate
 } from 'react-router-dom';
 import { createGlobalStyle } from 'styled-components';
 
+// Import global CSS variables and base styles
+import './styles/globals.css';
+
 // Context Providers
 import { BlogProvider } from './context/BlogContext';
 import { CommentProvider } from './context/CommentContext';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 // Layouts and Route Guards
 import Layout from './components/Layout';
@@ -24,8 +28,9 @@ import BlogListPage from './pages/BlogListPage';
 import BlogPage from './pages/BlogPage';
 import BlogPostPage from './pages/BlogPostPage';
 import LoginPage from './pages/LoginPage';
-import EditorTestPage from './pages/EditorTestPage';
 import SessionTestPage from './pages/SessionTestPage';
+import NotFoundPage from './pages/NotFoundPage';
+import QuillDocumentationPage from './pages/QuillDocumentationPage';
 
 // Import Protected Route component
 import ProtectedRoute from './components/ProtectedRoute';
@@ -35,61 +40,9 @@ if (import.meta.env.DEV) {
   import('./utils/apiTest');
 }
 
-// Global styles
+// Global styles - CSS variables are now imported from globals.css
 const GlobalStyle = createGlobalStyle`
-  :root {
-    /* Primary Colors */
-    --primary-color: #0066cc;
-    --primary-light: #e6f2ff;
-    --primary-dark: #004c99;
-    
-    /* Accent Colors */
-    --accent-color: #ffcc00;
-    --accent-light: #ffe066;
-    --accent-dark: #e6b800;
-    
-    /* Neutral Colors */
-    --neutral-100: #ffffff;
-    --neutral-200: #f9f9f9;
-    --neutral-300: #f1f1f1;
-    --neutral-400: #e0e0e0;
-    --neutral-500: #c2c2c2;
-    --neutral-600: #9e9e9e;
-    --neutral-700: #757575;
-    --neutral-800: #424242;
-    --neutral-900: #212121;
-    
-    /* Semantic Colors */
-    --success: #28a745;
-    --warning: #ffc107;
-    --error: #dc3545;
-    --info: #17a2b8;
-    
-    /* Typography */
-    --font-primary: 'Lexend', sans-serif;
-    --font-secondary: 'Inter', sans-serif;
-    
-    /* Spacing */
-    --space-xs: 0.25rem;
-    --space-sm: 0.5rem;
-    --space-md: 1rem;
-    --space-lg: 1.5rem;
-    --space-xl: 2rem;
-    --space-xxl: 3rem;
-    
-    /* Borders */
-    --border-radius-sm: 4px;
-    --border-radius-md: 8px;
-    --border-radius-lg: 12px;
-    --border-radius-xl: 16px;
-    --border-radius-round: 50%;
-    
-    /* Shadows */
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
-    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
-  }
+  /* Additional dynamic styles that complement globals.css */
 
   * {
     box-sizing: border-box;
@@ -104,10 +57,10 @@ const GlobalStyle = createGlobalStyle`
   }
   
   body {
-    font-family: var(--font-primary), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-family: var(--font-family-primary);
     line-height: 1.6;
-    color: var(--neutral-800);
-    background-color: var(--neutral-200);
+    color: var(--text);
+    background-color: var(--bg);
     font-size: 16px;
     font-weight: 400;
     -webkit-font-smoothing: antialiased;
@@ -115,12 +68,19 @@ const GlobalStyle = createGlobalStyle`
   }
   
   a {
-    color: var(--primary-color);
+    color: var(--accent);
     text-decoration: none;
-    transition: color 0.2s ease, background-color 0.2s ease;
+    transition: color var(--transition-fast);
     
     &:hover {
-      color: var(--primary-dark);
+      color: var(--accent-hover);
+      // text-decoration: underline;
+    }
+    
+    &:focus {
+      // outline: 2px solid var(--focus);
+      outline-offset: 2px;
+      border-radius: var(--radius-sm);
     }
   }
   
@@ -140,10 +100,10 @@ const GlobalStyle = createGlobalStyle`
 
   h1, h2, h3, h4, h5, h6 {
     font-weight: 600;
-    line-height: 1.3;
-    color: var(--neutral-900);
-    margin-bottom: var(--space-md);
-    font-family: var(--font-primary);
+    line-height: 1.25;
+    color: var(--text);
+    margin-bottom: var(--spacing-4);
+    font-family: var(--font-family-primary);
     letter-spacing: -0.02em;
   }
   
@@ -185,49 +145,49 @@ const GlobalStyle = createGlobalStyle`
   }
 
   p {
-    margin-bottom: var(--space-md);
-    color: var(--neutral-800);
+    margin-bottom: var(--spacing-4);
+    color: var(--text);
   }
   
   ul, ol {
-    margin-bottom: var(--space-md);
-    padding-left: var(--space-lg);
+    margin-bottom: var(--spacing-4);
+    padding-left: var(--spacing-6);
   }
   
   li {
-    margin-bottom: var(--space-xs);
+    margin-bottom: var(--spacing-1);
   }
   
   blockquote {
-    border-left: 4px solid var(--primary-color);
-    padding-left: var(--space-md);
-    margin: var(--space-lg) 0;
+    border-left: 4px solid var(--border-dark);
+    padding-left: var(--spacing-4);
+    margin: var(--spacing-6) 0;
     font-style: italic;
-    color: var(--neutral-700);
+    color: var(--text-muted);
   }
   
   hr {
     border: 0;
     height: 1px;
-    background-color: var(--neutral-300);
-    margin: var(--space-xl) 0;
+    background-color: var(--border);
+    margin: var(--spacing-8) 0;
   }
   
   code {
-    font-family: 'Courier New', Courier, monospace;
-    background-color: var(--neutral-300);
-    padding: 0.2em 0.4em;
-    border-radius: var(--border-radius-sm);
-    font-size: 0.9em;
+    font-family: var(--font-family-mono);
+    background-color: var(--surface);
+    padding: var(--spacing-1) var(--spacing-2);
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
   }
   
   pre {
-    background-color: var(--neutral-800);
-    color: var(--neutral-200);
-    padding: var(--space-md);
-    border-radius: var(--border-radius-md);
+    background-color: var(--primary);
+    color: var(--primary-contrast);
+    padding: var(--spacing-4);
+    border-radius: var(--radius-md);
     overflow-x: auto;
-    margin: var(--space-lg) 0;
+    margin: var(--spacing-6) 0;
     
     code {
       background-color: transparent;
@@ -239,17 +199,17 @@ const GlobalStyle = createGlobalStyle`
   table {
     width: 100%;
     border-collapse: collapse;
-    margin: var(--space-lg) 0;
+    margin: var(--spacing-6) 0;
   }
   
   th, td {
-    padding: var(--space-sm) var(--space-md);
-    border: 1px solid var(--neutral-400);
+    padding: var(--spacing-2) var(--spacing-4);
+    border: 1px solid var(--border);
     text-align: left;
   }
   
   th {
-    background-color: var(--neutral-300);
+    background-color: var(--surface);
     font-weight: 600;
   }
   
@@ -257,7 +217,7 @@ const GlobalStyle = createGlobalStyle`
   .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 var(--space-md);
+    padding: 0 var(--spacing-4);
     width: 100%;
   }
   
@@ -288,26 +248,36 @@ const GlobalStyle = createGlobalStyle`
   
   /* Form elements */
   input, textarea, select {
-    font-family: var(--font-primary);
+    font-family: var(--font-family-primary);
     font-size: 1rem;
-    padding: var(--space-sm) var(--space-md);
-    border: 1px solid var(--neutral-400);
-    border-radius: var(--border-radius-md);
-    background-color: var(--neutral-100);
-    transition: border-color 0.2s, box-shadow 0.2s;
+    padding: var(--spacing-3) var(--spacing-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background-color: var(--bg);
+    color: var(--text);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    min-height: 44px;
     
     &:focus {
       outline: none;
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
+      border-color: var(--accent);
+      box-shadow: var(--shadow-focus);
+    }
+    
+    &:disabled {
+      background-color: var(--surface);
+      color: var(--text-muted);
+      cursor: not-allowed;
+      opacity: 0.6;
     }
   }
   
   label {
     display: block;
-    margin-bottom: var(--space-xs);
+    margin-bottom: var(--spacing-2);
     font-weight: 500;
-    color: var(--neutral-800);
+    color: var(--text);
+    font-size: 0.875rem;
   }
   
   /* Buttons already styled in Button component */
@@ -332,91 +302,84 @@ const GlobalStyle = createGlobalStyle`
   }
   
   ::-webkit-scrollbar-track {
-    background: var(--neutral-200);
+    background: var(--surface);
   }
   
   ::-webkit-scrollbar-thumb {
-    background: var(--neutral-500);
-    border-radius: 4px;
+    background: var(--border-dark);
+    border-radius: var(--radius-sm);
   }
   
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--neutral-600);
+    background: var(--text-muted);
   }
 `;
 
 const App = () => {
   return (
-    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <GlobalStyle />
-      <AuthProvider>
-        <BlogProvider>
-          <CommentProvider>
-            <Routes>
-              {/* All routes */}
-              <Route path="/" element={<Layout />}>
-                <Route index element={<HomePage />} />
-                
-                {/* Auth routes */}
-                <Route path="login" element={<LoginPage />} />
-                
-                {/* Admin routes - protected */}
-                <Route path="admin/posts" element={
-                  <ProtectedRoute adminOnly>
-                    <PostListPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="admin/posts/new" element={
-                  <ProtectedRoute adminOnly>
-                    <PostFormPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="admin/posts/:slug/edit" element={
-                  <ProtectedRoute adminOnly>
-                    <PostFormPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="admin/comments" element={
-                  <ProtectedRoute adminOnly>
-                    <CommentsPage />
-                  </ProtectedRoute>
-                } />
-                
-                {/* Public blog routes */}
-                <Route path="blog" element={<BlogListPage />} />
-                <Route path="blog/:slug" element={<BlogPostPage />} />
-                
-                {/* Test route for Lexical editor */}
-                <Route path="editor-test" element={<EditorTestPage />} />
-                
-                {/* Test route for session expiration */}
-                <Route path="session-test" element={<SessionTestPage />} />
-                
-                {/* Legacy routes for backwards compatibility */}
-                <Route path="posts">
-                  <Route index element={<Navigate to="/admin/posts" replace />} />
-                  <Route path="new" element={<Navigate to="/admin/posts/new" replace />} />
-                  <Route path="edit/:slug" element={
+    <ThemeProvider>
+      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <GlobalStyle />
+        <AuthProvider>
+          <BlogProvider>
+            <CommentProvider>
+              <Routes>
+                {/* Public blog routes - outside Layout to prevent double headers */}
+                <Route path="/blog" element={<BlogListPage />} />
+                <Route path="/blog/:slug" element={<BlogPostPage />} />
+
+                {/* Auth routes - no layout */}
+                <Route path="/login" element={<LoginPage />} />
+
+                {/* Dashboard route - no layout */}
+                <Route path="/dashboard" element={<HomePage />} />
+
+                {/* Admin routes with Layout and protection */}
+                <Route path="/" element={<Layout />}>
+                  <Route index element={<Navigate to="/dashboard" replace />} />
+
+                  <Route path="admin/posts" element={
+                    <ProtectedRoute adminOnly>
+                      <PostListPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="admin/posts/new" element={
                     <ProtectedRoute adminOnly>
                       <PostFormPage />
                     </ProtectedRoute>
                   } />
-                  {/* Add compatibility for old ID-based routes */}
-                  <Route path=":id/edit" element={
+                  <Route path="admin/posts/:slug/edit" element={
                     <ProtectedRoute adminOnly>
                       <PostFormPage />
                     </ProtectedRoute>
                   } />
+                  <Route path="admin/comments" element={
+                    <ProtectedRoute adminOnly>
+                      <CommentsPage />
+                    </ProtectedRoute>
+                  } />
+
+                  {/* Documentation route */}
+                  <Route path="docs/quill" element={<QuillDocumentationPage />} />
+
+                  {/* Test route for session expiration */}
+                  <Route path="session-test" element={<SessionTestPage />} />
+
+                  {/* Legacy routes for backwards compatibility */}
+                  <Route path="posts" element={<Navigate to="/admin/posts" replace />} />
+                  <Route path="posts/new" element={<Navigate to="/admin/posts/new" replace />} />
+                  <Route path="posts/edit/:slug" element={<Navigate to="/admin/posts/:slug/edit" replace />} />
+                  <Route path="posts/:id/edit" element={<Navigate to="/admin/posts/:id/edit" replace />} />
                 </Route>
-              </Route>
-              
-              {/* Fallback route */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </CommentProvider>
-        </BlogProvider>
-      </AuthProvider>
-    </Router>
+
+                {/* 404 catch-all route */}
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </CommentProvider>
+          </BlogProvider>
+        </AuthProvider>
+      </Router>
+    </ThemeProvider>
   );
 };
 

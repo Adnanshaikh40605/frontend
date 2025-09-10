@@ -309,7 +309,8 @@ const BlogPage = () => {
       subtitle="Read the full blog post content"
       showContentWrapper={false}
     >
-      <BlogContainer>
+      <div style={{ padding: '2rem', marginTop: '64px', minHeight: 'calc(100vh - 64px)' }}>
+        <BlogContainer>
       {/* SEO Meta Tags */}
       <SEO 
         title={post.title}
@@ -377,6 +378,7 @@ const BlogPage = () => {
         </ShareButtons>
       </ShareSection>
       </BlogContainer>
+      </div>
     </DashboardLayout>
   );
 };

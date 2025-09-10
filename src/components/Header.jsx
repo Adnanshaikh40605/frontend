@@ -31,17 +31,21 @@ const Nav = styled.nav`
 `;
 
 const Logo = styled(Link)`
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #333;
+  display: flex;
+  align-items: center;
   text-decoration: none;
   
   &:hover {
-    color: #0066cc;
+    opacity: 0.8;
   }
+`;
+
+const LogoImage = styled.img`
+  height: 40px;
+  width: auto;
   
   @media (max-width: 480px) {
-    font-size: 1.25rem;
+    height: 32px;
   }
 `;
 
@@ -124,17 +128,47 @@ const MobileMenuButton = styled.button`
   display: none;
   background: none;
   border: none;
-  font-size: 1.5rem;
   cursor: pointer;
   color: #333;
   width: 40px;
   height: 40px;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
   
   @media (max-width: 768px) {
     display: flex;
   }
+`;
+
+const HamburgerLine = styled.div`
+  width: 20px;
+  height: 2px;
+  background-color: #333;
+  transition: all 0.3s ease;
+  transform-origin: center;
+  
+  ${props => props.$isOpen && `
+    &:nth-child(1) {
+      transform: rotate(45deg) translate(5px, 5px);
+    }
+    
+    &:nth-child(2) {
+      opacity: 0;
+    }
+    
+    &:nth-child(3) {
+      transform: rotate(-45deg) translate(7px, -6px);
+    }
+  `}
 `;
 
 const DiagnosticButton = styled(Link)`
@@ -315,10 +349,17 @@ const Header = () => {
   return (
     <HeaderContainer>
       <Nav>
-        <Logo to="/">Blog CMS</Logo>
+        <Logo to="/">
+          <LogoImage 
+            src="/Logo_Full.png" 
+            alt="Vacation BNA Logo" 
+          />
+        </Logo>
         
         <MobileMenuButton onClick={toggleMenu}>
-          {isMenuOpen ? 'Close' : 'Menu'}
+          <HamburgerLine $isOpen={isMenuOpen} />
+          <HamburgerLine $isOpen={isMenuOpen} />
+          <HamburgerLine $isOpen={isMenuOpen} />
         </MobileMenuButton>
         
         <NavLinks $isOpen={isMenuOpen}>
