@@ -147,6 +147,29 @@ export const handleApiError = (error, options = {}) => {
 
   const errorInfo = parseError(error);
 
+  // Handle 401 Unauthorized specifically
+  if (errorInfo.type === ERROR_TYPES.AUTHENTICATION || errorInfo.status === 401) {
+    console.log('🚨 401 Unauthorized - redirecting to login');
+    
+    // Clear all authentication data
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('userProfile');
+    localStorage.removeItem('userProfileTimestamp');
+    
+    // Dispatch session expired event
+    window.dispatchEvent(new CustomEvent('sessionExpired', {
+      detail: { reason: '401 Unauthorized - authentication required' }
+    }));
+    
+    // Redirect to login page if not already there
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login?sessionExpired=true';
+    }
+    
+    return errorInfo; // Return early for 401 errors
+  }
+
   // Log error for debugging
   if (logError) {
     console.error('API Error:', {

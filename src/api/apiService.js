@@ -199,13 +199,15 @@ export const postAPI = {
       if (isDevelopment) {
         return handleApiWithFallback(
           async () => {
-            const response = await fetch(url);
+            const headers = await getHeaders();
+            const response = await fetch(url, { headers });
             return handleResponse(response);
           },
           { results: mockPosts, count: mockPosts.length }
         );
       } else {
-        const response = await fetch(url);
+        const headers = await getHeaders();
+        const response = await fetch(url, { headers });
         return handleResponse(response);
       }
     } catch (error) {
@@ -225,7 +227,8 @@ export const postAPI = {
       if (isDevelopment) {
         return handleApiWithFallback(
           async () => {
-            const response = await fetch(url);
+            const headers = await getHeaders();
+            const response = await fetch(url, { headers });
             if (!response.ok) {
               console.error(`API Error: ${response.status} ${response.statusText}`);
               throw new Error(`Failed to fetch post: ${response.statusText}`);
@@ -235,7 +238,8 @@ export const postAPI = {
           mockPosts.find(post => post.slug === slug) || null
         );
       } else {
-        const response = await fetch(url);
+        const headers = await getHeaders();
+        const response = await fetch(url, { headers });
         if (!response.ok) {
           console.error(`API Error: ${response.status} ${response.statusText}`);
           throw new Error(`Failed to fetch post: ${response.statusText}`);
@@ -257,13 +261,15 @@ export const postAPI = {
       if (isDevelopment) {
         return handleApiWithFallback(
           async () => {
-            const response = await fetch(url);
+            const headers = await getHeaders();
+            const response = await fetch(url, { headers });
             return handleResponse(response);
           },
           mockPosts.find(post => post.id === parseInt(id)) || null
         );
       } else {
-        const response = await fetch(url);
+        const headers = await getHeaders();
+        const response = await fetch(url, { headers });
         return handleResponse(response);
       }
     } catch (error) {
@@ -499,13 +505,15 @@ export const postAPI = {
       if (isDevelopment) {
         return handleApiWithFallback(
           async () => {
-            const response = await fetch(url);
+            const headers = await getHeaders();
+            const response = await fetch(url, { headers });
             return handleResponse(response);
           },
           { results: [], count: 0 }
         );
       } else {
-        const response = await fetch(url);
+        const headers = await getHeaders();
+        const response = await fetch(url, { headers });
         return handleResponse(response);
       }
     } catch (error) {
@@ -524,7 +532,8 @@ export const commentAPI = {
       if (postId) {
         url += `?post=${postId}`;
       }
-      const response = await fetch(url);
+      const headers = await getHeaders();
+      const response = await fetch(url, { headers });
       return handleResponse(response);
     } catch (error) {
       console.error('API Error fetching comments:', error);
@@ -553,7 +562,8 @@ export const commentAPI = {
 
       console.log(`Fetching approved top-level comments for post ${postId} from: ${url}`);
 
-      const response = await fetch(url);
+      const headers = await getHeaders();
+      const response = await fetch(url, { headers });
       const data = await handleResponse(response);
 
       // The backend now returns only top-level comments with nested replies in the 'replies' field
@@ -798,7 +808,8 @@ export const commentAPI = {
   getCounts: async () => {
     try {
       console.log('Fetching comment counts from:', ENDPOINTS.COMMENT_COUNTS);
-      const response = await fetch(ENDPOINTS.COMMENT_COUNTS);
+      const headers = await getHeaders();
+      const response = await fetch(ENDPOINTS.COMMENT_COUNTS, { headers });
       return handleResponse(response);
     } catch (error) {
       console.error('API Error fetching comment counts:', error);
@@ -932,7 +943,8 @@ export const categoriesAPI = {
       if (isDevelopment) {
         return handleApiWithFallback(
           async () => {
-            const response = await fetch(url);
+            const headers = await getHeaders();
+            const response = await fetch(url, { headers });
             return handleResponse(response);
           },
           {
@@ -948,7 +960,8 @@ export const categoriesAPI = {
           }
         );
       } else {
-        const response = await fetch(url);
+        const headers = await getHeaders();
+        const response = await fetch(url, { headers });
         return handleResponse(response);
       }
     } catch (error) {

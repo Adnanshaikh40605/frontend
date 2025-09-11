@@ -134,6 +134,32 @@ export const getHeaders = async (includeContentType = true) => {
   return headers;
 };
 
+// Global 401 error handler
+export const handle401Error = (error) => {
+  if (error.response?.status === 401 || error.status === 401) {
+    console.log('🚨 401 Unauthorized - redirecting to login');
+    
+    // Clear all authentication data
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('userProfile');
+    localStorage.removeItem('userProfileTimestamp');
+    
+    // Dispatch session expired event
+    window.dispatchEvent(new CustomEvent('sessionExpired', {
+      detail: { reason: '401 Unauthorized - authentication required' }
+    }));
+    
+    // Redirect to login page if not already there
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login?sessionExpired=true';
+    }
+    
+    return true; // Indicates 401 was handled
+  }
+  return false; // 401 was not handled
+};
+
 // Improved error handling for API responses
 export const handleResponse = async (response) => {
   try {
@@ -161,6 +187,27 @@ export const handleResponse = async (response) => {
       
       if (errorText) {
         console.error(`Error response body: ${errorText}`);
+      }
+      
+      // Handle 401 Unauthorized specifically
+      if (response.status === 401) {
+        console.log('🚨 401 Unauthorized - redirecting to login');
+        
+        // Clear all authentication data
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('userProfile');
+        localStorage.removeItem('userProfileTimestamp');
+        
+        // Dispatch session expired event
+        window.dispatchEvent(new CustomEvent('sessionExpired', {
+          detail: { reason: '401 Unauthorized - authentication required' }
+        }));
+        
+        // Redirect to login page if not already there
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login?sessionExpired=true';
+        }
       }
       
       // Throw a formatted error with status code for easier handling
@@ -238,4 +285,18 @@ export const handleApiWithFallback = async (apiCall, fallbackData = null, maxRet
   
   // If no fallback data was provided, rethrow the last error
   throw lastError || new Error('API request failed with no specific error');
+};
+
+// Global error handler for API calls
+export const handleApiError = (error) => {
+  console.error('API Error:', error);
+  
+  // Check if it's a 401 error and handle it
+  if (handle401Error(error)) {
+    return; // 401 was handled, don't rethrow
+  }
+  
+  // For other errors, you can add additional handling here
+  // For now, just rethrow the error
+  throw error;
 }; 
