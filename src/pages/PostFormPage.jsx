@@ -5,6 +5,7 @@ import QuillEditor from '../components/QuillEditor';
 import Button from '../components/Button';
 import DashboardLayout from '../components/DashboardLayout';
 import CategoryModal from '../components/CategoryModal';
+import SchemaPreview from '../components/SchemaPreview';
 import { postAPI, categoriesAPI } from '../api/apiService';
 import slugify from '../utils/slugify';
 import { clearPostCache } from '../pages/BlogPostPage';
@@ -618,6 +619,9 @@ const PostFormPage = () => {
     excerpt: '',
     meta_title: '',
     meta_description: '',
+    schema_headline: '',
+    schema_description: '',
+    schema_image_alt: '',
     published: true,
     featured: false,
     category: null,
@@ -709,6 +713,9 @@ const PostFormPage = () => {
           excerpt: data.excerpt || '',
           meta_title: data.meta_title || '',
           meta_description: data.meta_description || '',
+          schema_headline: data.schema_headline || '',
+          schema_description: data.schema_description || '',
+          schema_image_alt: data.schema_image_alt || '',
           published: data.published || true,
           featured: data.featured || false,
           category: data.category ? data.category.id : null,
@@ -1239,6 +1246,80 @@ const PostFormPage = () => {
             </div>
           </FormGroup>
 
+          <SectionDivider />
+          <SectionTitle>Schema.org Structured Data (Optional)</SectionTitle>
+          
+          <FormGroup>
+            <Label htmlFor="schema_headline">Schema Headline</Label>
+            <Input
+              type="text"
+              id="schema_headline"
+              name="schema_headline"
+              value={post.schema_headline}
+              onChange={handleChange}
+              placeholder="Schema headline (auto-generated from title if empty)"
+              maxLength={110}
+            />
+            <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.5rem', textAlign: 'right' }}>
+              {post.schema_headline.length}/110 characters
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.25rem' }}>
+              Used for structured data. Leave empty to auto-generate from title.
+            </div>
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="schema_description">Schema Description</Label>
+            <textarea
+              id="schema_description"
+              name="schema_description"
+              value={post.schema_description}
+              onChange={handleChange}
+              placeholder="Schema description (auto-generated from excerpt/content if empty)"
+              rows={3}
+              style={{
+                padding: '0.9rem',
+                border: '1px solid #dce0e5',
+                borderRadius: '6px',
+                fontSize: '0.9rem',
+                fontFamily: 'inherit',
+                resize: 'vertical',
+                transition: 'border-color 0.2s, box-shadow 0.2s',
+                width: '100%'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#80bdff';
+                e.target.style.boxShadow = '0 0 0 2px rgba(0, 123, 255, 0.25)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#dce0e5';
+                e.target.style.boxShadow = 'none';
+              }}
+            />
+            <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.25rem' }}>
+              Used for structured data. Leave empty to auto-generate from excerpt or content.
+            </div>
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="schema_image_alt">Schema Image Alt Text</Label>
+            <Input
+              type="text"
+              id="schema_image_alt"
+              name="schema_image_alt"
+              value={post.schema_image_alt}
+              onChange={handleChange}
+              placeholder="Alt text for featured image in schema (auto-generated if empty)"
+              maxLength={125}
+            />
+            <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.5rem', textAlign: 'right' }}>
+              {post.schema_image_alt.length}/125 characters
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.25rem' }}>
+              Alt text for the featured image in structured data. Leave empty to auto-generate.
+            </div>
+          </FormGroup>
+
           <FormGroup>
             <Label htmlFor="category">Category</Label>
             <CategorySelectionContainer>
@@ -1423,6 +1504,14 @@ const PostFormPage = () => {
           </StyledButton>
         </ButtonContainer>
       </Form>
+
+      {/* Schema Preview - only show for existing posts */}
+      {isEdit && post.slug && (
+        <SchemaPreview 
+          postSlug={post.slug} 
+          showByDefault={false}
+        />
+      )}
 
       {/* Category Creation Modal */}
       <CategoryModal

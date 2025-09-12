@@ -73,17 +73,17 @@ export const parseJwt = (token) => {
 /**
  * Check if the token is expired
  * @param {string} token - JWT token
- * @param {number} bufferSeconds - Buffer time in seconds before considering token expired (default: 0 = no buffer)
+ * @param {number} bufferSeconds - Buffer time in seconds before considering token expired (default: 60 = 1 minute buffer)
  * @returns {boolean} True if expired, false otherwise
  */
-export const isTokenExpired = (token, bufferSeconds = 0) => {
+export const isTokenExpired = (token, bufferSeconds = 60) => {
   if (!token) return true;
 
   const payload = parseJwt(token);
-  if (!payload) return true;
+  if (!payload || !payload.exp) return true;
 
   const currentTime = Math.floor(Date.now() / 1000);
-  // Add buffer time to prevent premature expiration
+  // Add buffer time to prevent premature expiration (default 1 minute)
   return payload.exp < (currentTime + bufferSeconds);
 };
 

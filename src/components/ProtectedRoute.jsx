@@ -2,41 +2,63 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-/**
- * ProtectedRoute component that redirects to login if user is not authenticated
- * @param {Object} props - Component props
- * @param {React.ReactNode} props.children - Child components to render if authenticated
- * @param {boolean} [props.adminOnly=false] - Whether the route requires admin privileges
- * @returns {React.ReactNode} The protected component or redirect
- */
 const ProtectedRoute = ({ children, adminOnly = false }) => {
-  const { currentUser, isAuthenticated, loading } = useAuth();
+  const authContext = useAuth();
   const location = useLocation();
-  
-  // Show loading state if auth is still being checked
+
+  // Handle case where useAuth returns undefined
+  if (!authContext) {
+    console.log('🔒 ProtectedRoute: AuthContext is undefined, redirecting to login');
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  const { isAuthenticated, loading, currentUser } = authContext;
+
+  // Show loading while checking authentication
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '80vh' }}>
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '18px',
+        color: '#666'
+      }}>
+        Loading...
       </div>
     );
   }
-  
-  // If not authenticated, redirect to login
+
+  // Redirect to login if not authenticated
   if (!isAuthenticated) {
-    // Save the location they were trying to access for redirect after login
+    console.log('🔒 ProtectedRoute: Not authenticated, redirecting to login');
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
-  
-  // For admin-only routes, check if user is admin/staff
-  if (adminOnly && (!currentUser || !currentUser.is_staff)) {
-    return <Navigate to="/" replace />;
+
+  // Check admin permissions if required
+  if (adminOnly) {
+    const isAdmin = currentUser?.is_staff || currentUser?.permissions?.is_staff || currentUser?.permissions?.is_superuser;
+    
+    console.log('🔒 ProtectedRoute: Admin check:', { 
+      adminOnly,
+      isAdmin,
+      currentUser: currentUser ? {
+        id: currentUser.id,
+        username: currentUser.username,
+        is_staff: currentUser.is_staff,
+        permissions: currentUser.permissions
+      } : null
+    });
+    
+    if (!isAdmin) {
+      console.log('🔒 ProtectedRoute: Admin access required, user is not admin - redirecting to dashboard');
+      return <Navigate to="/dashboard" replace />;
+    }
   }
-  
-  // User is authenticated (and has admin rights if required)
+
+  // Render the protected component
   return children;
 };
 
-export default ProtectedRoute; 
+export default ProtectedRoute;

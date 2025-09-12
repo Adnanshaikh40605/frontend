@@ -332,7 +332,11 @@ const App = () => {
                 <Route path="/login" element={<LoginPage />} />
 
                 {/* Dashboard route - no layout */}
-                <Route path="/dashboard" element={<HomePage />} />
+                <Route path="/dashboard" element={
+                  <ProtectedRoute>
+                    <HomePage />
+                  </ProtectedRoute>
+                } />
 
                 {/* Admin routes with Layout and protection */}
                 <Route path="/" element={<Layout />}>

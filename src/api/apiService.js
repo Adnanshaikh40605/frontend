@@ -796,7 +796,8 @@ export const commentAPI = {
 
       console.log('Fetching admin comments with URL:', url);
 
-      const response = await fetch(url);
+      const headers = await getHeaders();
+      const response = await fetch(url, { headers });
       return handleResponse(response);
     } catch (error) {
       console.error('API Error fetching admin comments:', error);

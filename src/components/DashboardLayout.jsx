@@ -302,7 +302,8 @@ const ContentWrapper = styled.div`
 `;
 
 const DashboardLayout = ({ children, title, subtitle, showContentWrapper = true }) => {
-  const { currentUser, logout } = useAuth();
+  const authContext = useAuth();
+  const { currentUser, logout } = authContext || {};
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

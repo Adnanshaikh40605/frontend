@@ -43,14 +43,54 @@ export const AuthProvider = ({ children }) => {
         const accessToken = localStorage.getItem('accessToken');
         const refreshToken = localStorage.getItem('refreshToken');
 
-        if (!accessToken) {
+        // If no tokens at all, user is not authenticated
+        if (!accessToken && !refreshToken) {
+          console.log('📋 AuthContext: No tokens found, user not authenticated');
           setIsAuthenticated(false);
           setLoading(false);
           return;
         }
 
-        // Don't check token expiration here - let the API calls handle 401s
-        // Just check if we have cached user profile data
+        // If we have tokens, check if access token is expired
+        if (accessToken && isTokenExpired(accessToken, 0)) {
+          console.log('📋 AuthContext: Access token expired, checking refresh token');
+          
+          // If refresh token is also expired, user needs to login again
+          if (!refreshToken || isTokenExpired(refreshToken, 0)) {
+            console.log('📋 AuthContext: Both tokens expired, user not authenticated');
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('userProfile');
+            localStorage.removeItem('userProfileTimestamp');
+            setIsAuthenticated(false);
+            setLoading(false);
+            return;
+          }
+          
+          // Refresh token is valid, try to refresh access token
+          console.log('📋 AuthContext: Attempting to refresh access token');
+          try {
+            const response = await axiosInstance.post(ENDPOINTS.AUTH_TOKEN_REFRESH, {
+              refresh: refreshToken
+            });
+            
+            const newAccessToken = response.data.access;
+            localStorage.setItem('accessToken', newAccessToken);
+            console.log('✅ AuthContext: Access token refreshed successfully');
+          } catch (refreshErr) {
+            console.error('❌ AuthContext: Token refresh failed:', refreshErr);
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('userProfile');
+            localStorage.removeItem('userProfileTimestamp');
+            setIsAuthenticated(false);
+            setLoading(false);
+            return;
+          }
+        }
+
+        // At this point, we have a valid access token
+        // Check if we have cached user profile data
         const cachedProfile = localStorage.getItem('userProfile');
         const cacheTimestamp = localStorage.getItem('userProfileTimestamp');
         const now = Date.now();
@@ -79,16 +119,18 @@ export const AuthProvider = ({ children }) => {
         } catch (profileErr) {
           console.error('Failed to fetch user profile:', profileErr);
           // If profile fetch fails with 401, the axios interceptor will handle token refresh
-          // Don't handle logout here, let the response interceptor handle it
           if (profileErr.response?.status === 401) {
             console.log('Profile fetch failed with 401, axios interceptor will handle it');
+            // Don't set as authenticated if profile fetch fails with 401
+            setIsAuthenticated(false);
+          } else {
+            // For other errors, still set as authenticated if we have a valid token
+            setIsAuthenticated(true);
           }
-          // For other errors, still set as authenticated if we have a valid token
-          setIsAuthenticated(true);
         }
       } catch (err) {
         console.error('Auth check failed:', err);
-        handleLogout();
+        setIsAuthenticated(false);
       }
       setLoading(false);
     };
@@ -185,6 +227,32 @@ export const AuthProvider = ({ children }) => {
 
   // Removed session modal handlers - axios interceptor handles redirects automatically
 
+  // Force refresh user profile (bypass cache)
+  const refreshProfile = async () => {
+    try {
+      console.log('🔄 AuthContext: Force refreshing user profile...');
+      
+      // Clear cached profile data
+      localStorage.removeItem('userProfile');
+      localStorage.removeItem('userProfileTimestamp');
+      
+      // Fetch fresh profile data
+      const response = await axiosInstance.get(ENDPOINTS.AUTH_PROFILE);
+      setCurrentUser(response.data);
+      
+      // Cache the new profile data
+      const now = Date.now();
+      localStorage.setItem('userProfile', JSON.stringify(response.data));
+      localStorage.setItem('userProfileTimestamp', now.toString());
+      
+      console.log('✅ AuthContext: Profile refreshed successfully');
+      return response.data;
+    } catch (err) {
+      console.error('❌ AuthContext: Failed to refresh profile:', err);
+      throw err;
+    }
+  };
+
   const value = {
     currentUser,
     loading,
@@ -192,7 +260,8 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     login,
     logout: handleLogout,
-    refreshToken: refreshAuthToken
+    refreshToken: refreshAuthToken,
+    refreshProfile
   };
 
   return (

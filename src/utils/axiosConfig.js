@@ -97,7 +97,7 @@ axiosInstance.interceptors.response.use(
       const refreshToken = localStorage.getItem('refreshToken');
       
       // Only try to refresh if we have a refresh token and it's not expired
-      if (refreshToken && !isTokenExpired(refreshToken, 0)) {
+      if (refreshToken && !isTokenExpired(refreshToken, 60)) {
         console.log('🔄 Attempting to refresh token after 401 error');
         isRefreshing = true;
         
